@@ -83,11 +83,16 @@ class EventController extends Controller
         ]);
     }
 
-    public function destroy(Event $event)
+    public function delete(Event $id)
     {
-        $this->authorize('delete', $event);
+        $event = Event::findOrFail($id);
         
-        $event->delete();
+        if (Auth::user()->role !== 'admin' && Auth::user()->organization->id !== $event->organization_id) {
+            return response()->json([
+            'status' => 'error',
+            'message' => 'Unauthorized'
+            ], 403);
+        }
         
         return response()->json([
             'status' => 'success',

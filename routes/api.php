@@ -18,14 +18,7 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 
-// random testing api 
 
-Route::get('/test', function(){
-    return response()->json([
-        'status' => 'success',
-        'message' => 'Test api working'
-    ]);
-});
 
 Route::get('/test2', [testing::class, 'test']);
 
