@@ -94,7 +94,6 @@ class AuthController extends Controller
     public function getUser(Request $request)
     {
         $user = $request->user()->load(['organization', 'admin']);
-        
         return response()->json([
             'status' => 'success',
             'user' => [
