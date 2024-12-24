@@ -83,8 +83,9 @@ class EventController extends Controller
         ]);
     }
 
-    public function delete(Event $id)
+    public function delete( $id)
     {
+        // return response()->json(["hello"]);
         $event = Event::findOrFail($id);
         
         if (Auth::user()->role !== 'admin' && Auth::user()->organization->id !== $event->organization_id) {
