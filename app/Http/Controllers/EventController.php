@@ -47,8 +47,10 @@ class EventController extends Controller
 
     {
         $event = Event::find($id);
-        $event->load(['organization', 'fundraising', 'tickets']);
-        return response()->json(['status' => 'success', 'data' => $event]);
+        $event->load(['organization']);
+        //add fundraising and tickets later when it is implemented
+        // $event->load(['organization', 'fundraising', 'tickets']);
+        return response()->json(['status' => 'success', 'data' => $event], 201);
     }
 
     public function update(Request $request, $id)
