@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Admin;
 use App\Models\Organization;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -18,14 +19,17 @@ class AuthController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users',
             'password' => 'required|string|min:8|confirmed',
-            'role' => 'required|in:user,organization',
+            'role' => 'required|in:user,organization,admin',
             'phone' => 'nullable|string',
             'profile_image' => 'nullable|string',
             // Organization fields
-            'org_name' => 'required_if:role,organization',
+            'org_name' => 'required_if:role,organization|string',
             'org_email' => 'required_if:role,organization|email',
-            'org_phone' => 'required_if:role,organization',
-            'org_description' => 'required_if:role,organization',
+            'org_phone' => 'required_if:role,organization|string',
+            'org_description' => 'required_if:role,organization|string',
+            // Admin fields
+            'admin_role' => 'required_if:role,admin|in:super_admin,moderator',
+            'admin_permissions' => 'nullable|array'
         ]);
 
         $user = User::create([
@@ -46,15 +50,18 @@ class AuthController extends Controller
                 'user_id' => $user->id,
                 'status' => 'pending'
             ]);
+        } elseif ($validated['role'] === 'admin') {
+            Admin::create([
+                'user_id' => $user->id,
+                'role' => $validated['admin_role'],
+                'permissions' => $validated['admin_permissions'] ?? null
+            ]);
         }
-
-        $token = $user->createToken('auth-token')->plainTextToken;
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Registration successful',
-            'user' => $user,
-            'token' => $token
+            'message' => 'Registration successful. Please login to continue.',
+            'user' => $user
         ], 201);
     }
 
@@ -81,16 +88,31 @@ class AuthController extends Controller
             'token' => $token
         ]);
     }
-
+    
+    
+    // Get the authenticated user
     public function getUser(Request $request)
     {
-        $user = $request->user()->load('organization');
+        $user = $request->user()->load(['organization', 'admin']);
+        
         return response()->json([
             'status' => 'success',
-            'user' => $user
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
+                'phone' => $user->phone,
+                'profile_image' => $user->profile_image,
+                'organization' => $user->when($user->role === 'organization', 
+                    fn() => $user->organization),
+                'admin' => $user->when($user->role === 'admin', 
+                    fn() => $user->admin),
+                'created_at' => $user->created_at
+            ]
         ]);
     }
-
+    // Logout the authenticated user
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();

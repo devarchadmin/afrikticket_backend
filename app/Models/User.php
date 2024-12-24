@@ -44,4 +44,10 @@ class User extends Authenticatable
     {
         return $this->role === 'organization';
     }
+
+    // Add this relationship method to the User model
+    public function admin()
+    {
+        return $this->hasOne(Admin::class);
+    }
 }
