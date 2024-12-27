@@ -21,8 +21,6 @@ class Event extends Model
         // 'fundraising_id',
         'status'
     ];
-{"name": "org","email": "org@mail.com","password": "password123","password_confirmation": "password123","role": "organization","phone": "1234567890","org_name": "My Organization","org_email": "org@org.com","org_phone": "1234567890","org_description": "Organization description"}
-    
 
     protected $casts = [
         'date' => 'datetime',
