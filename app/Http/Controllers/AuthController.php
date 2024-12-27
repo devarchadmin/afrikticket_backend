@@ -27,6 +27,8 @@ class AuthController extends Controller
             'org_email' => 'required_if:role,organization|email',
             'org_phone' => 'required_if:role,organization|string',
             'org_description' => 'required_if:role,organization|string',
+            'org_icd_document' => 'required_if:role,organization|file|mimes:pdf,jpg,jpeg,png|max:2048',
+            'org_commerce_register' => 'required_if:role,organization|file|mimes:pdf,jpg,jpeg,png|max:2048',
             // Admin fields
             'admin_role' => 'required_if:role,admin|in:super_admin,moderator',
             'admin_permissions' => 'nullable|array'
@@ -42,13 +44,20 @@ class AuthController extends Controller
         ]);
 
         if ($validated['role'] === 'organization') {
+            
+            // Handle file uploads
+            $icdPath = $request->file('org_icd_document')->store('organizations/documents', 'public');
+            $commercePath = $request->file('org_commerce_register')->store('organizations/documents', 'public');
+
             Organization::create([
                 'name' => $validated['org_name'],
                 'email' => $validated['org_email'],
                 'phone' => $validated['org_phone'],
                 'description' => $validated['org_description'],
                 'user_id' => $user->id,
-                'status' => 'pending'
+                'status' => 'pending',
+                'icd_document' => $icdPath,
+                'commerce_register' => $commercePath
             ]);
         } elseif ($validated['role'] === 'admin') {
             Admin::create([

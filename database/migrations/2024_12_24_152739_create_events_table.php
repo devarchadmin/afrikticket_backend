@@ -20,7 +20,7 @@ return new class extends Migration
             $table->integer('max_tickets');
             $table->decimal('price', 10, 2);
             $table->foreignId('organization_id')->constrained()->onDelete('cascade');
-            $table->foreignId('fundraising_id')->nullable()->constrained()->nullOnDelete();
+            // $table->foreignId('fundraising_id')->nullable()->constrained()->nullOnDelete();
             $table->enum('status', ['active', 'cancelled'])->default('active');
             $table->timestamps();
         });

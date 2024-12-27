@@ -15,6 +15,8 @@ class Organization extends Model
         'phone',
         'description',
         'status',
+        'icd_document',
+    'commerce_register',
         'user_id'
     ];
 

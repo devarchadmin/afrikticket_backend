@@ -29,7 +29,7 @@ class EventController extends Controller
             'location' => 'required|string',
             'max_tickets' => 'required|integer|min:1',
             'price' => 'required|numeric|min:0',
-            'fundraising_id' => 'nullable|exists:fundraisings,id'
+            // 'fundraising_id' => 'nullable|exists:fundraisings,id'
             // 'fundraising_id' => 'nullable'
         ]);
 
@@ -98,6 +98,21 @@ class EventController extends Controller
         return response()->json([
             'status' => 'success',
             'message' => 'Event deleted successfully'
+        ]);
+    }
+    public function organizationEvents()
+    {
+        if (Auth::user()->role !== 'organization') {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Unauthorized'
+            ], 403);
+        }
+
+        $events = Event::where('organization_id', Auth::user()->organization->id)->get();
+        return response()->json([
+            'status' => 'success',
+            'data' => $events
         ]);
     }
 }
