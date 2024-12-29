@@ -5,7 +5,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Authcontroller;
 use App\Http\Controllers\TicketController;
-
+use App\Http\Middleware\AdminMiddleware;
+use App\Http\Middleware\OrganizationMiddleware;
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', [AuthController::class, 'getUser']);
@@ -22,7 +23,7 @@ Route::get('/events', [EventController::class, 'index']);
 Route::get('/events/{id}', [EventController::class, 'show']);
 
 // Admin routes
-// Route::middleware(['auth:sanctum', 'admin'])->group(function () {
+// Route::middleware(['auth:sanctum', AdminMiddleware::class])->group(function () {
 //     // Admin only routes here
 //     Route::get('/admin/users', [AdminController::class, 'getAllUsers']);
 //     Route::get('/admin/organizations', [AdminController::class, 'getAllOrganizations']);
@@ -30,7 +31,7 @@ Route::get('/events/{id}', [EventController::class, 'show']);
 // });
 
 // Organization routes
-Route::middleware(['auth:sanctum', 'organization'])->group(function () {
+Route::middleware(['auth:sanctum', OrganizationMiddleware::class])->group(function () {
     // Organization only routes here
     Route::post('/events', [EventController::class, 'store']);
     Route::put('/events/{id}', [EventController::class, 'update']);
