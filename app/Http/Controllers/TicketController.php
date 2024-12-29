@@ -14,32 +14,39 @@ class TicketController extends Controller
     public function store(Request $request, $eventId)
     {
         $event = Event::findOrFail($eventId);
+        $quantity = $request->input('quantity', 1); // Default to 1 if not specified
 
         // Check if tickets are still available
         $totalTicketsSold = Ticket::where('event_id', $eventId)->count();
-        if ($totalTicketsSold >= $event->max_tickets) {
-            return response()->json(['message' => 'Tickets sold out'], 400);
+        if ($totalTicketsSold + $quantity > $event->max_tickets) {
+            return response()->json(['message' => 'Not enough tickets available'], 400);
         }
 
-        // Generate JWT token
-        $payload = [
-            'sub' => Auth::id(),
-            'event_id' => $eventId,
-            'purchase_date' => now()->toDateTimeString(),
-        ];
-        $token = JWT::encode($payload, env('JWT_SECRET'), 'HS256');
+        $tickets = [];
+        for ($i = 0; $i < $quantity; $i++) {
+            // Generate JWT token
+            $payload = [
+                'sub' => Auth::id(),
+                'event_id' => $eventId,
+                'purchase_date' => now()->toDateTimeString(),
+                'ticket_number' => $i + 1,
+            ];
+            $token = JWT::encode($payload, env('JWT_SECRET'), 'HS256');
 
-        // Create the ticket
-        $ticket = Ticket::create([
-            'event_id' => $eventId,
-            'user_id' => Auth::id(),
-            'price' => $event->price,
-            'purchase_date' => now(),
-            'status' => 'valid',
-            'token' => $token,
-        ]);
+            // Create the ticket
+            $ticket = Ticket::create([
+                'event_id' => $eventId,
+                'user_id' => Auth::id(),
+                'price' => $event->price,
+                'purchase_date' => now(),
+                'status' => 'valid',
+                'token' => $token,
+            ]);
 
-        return response()->json(['status' => 'success', 'data' => $ticket], 201);
+            $tickets[] = $ticket;
+        }
+
+        return response()->json(['status' => 'success', 'data' => $tickets], 201);
     }
 
     public function validateTicket(Request $request)
