@@ -102,12 +102,12 @@ class EventController extends Controller
     }
     public function organizationEvents()
     {
-        // if (Auth::user()->role !== 'organization') {
-        //     return response()->json([
-        //         'status' => 'error',
-        //         'message' => 'Unauthorized'
-        //     ], 403);
-        // }
+        if (Auth::user()->role !== 'organization') {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Unauthorized'
+            ], 403);
+        }
 
         $events = Event::where('organization_id', Auth::user()->organization->id)->get();
         return response()->json([
