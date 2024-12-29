@@ -5,6 +5,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Authcontroller;
 use App\Http\Controllers\testing;
+use App\Http\Controllers\TicketController;
+use App\Http\Controllers\UserController;
 // Route::get('/user', function (Request $request) {
 //     return $request->user();
 // })->middleware('auth:sanctum');
@@ -32,4 +34,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::put('/events/{id}', [EventController::class, 'update']);
     Route::delete('/events/{id}', [EventController::class, 'delete']);
     Route::get('/my-events/' , [EventController::class,'organizationEvents']);
+    
+    
+    Route::post('/events/{eventId}/tickets', [TicketController::class, 'store']);
+    Route::post('/tickets/validate', [TicketController::class, 'validateTicket']);
 });
