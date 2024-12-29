@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\FundraisingController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Authcontroller;
@@ -37,10 +38,21 @@ Route::middleware(['auth:sanctum', OrganizationMiddleware::class])->group(functi
     Route::put('/events/{id}', [EventController::class, 'update']);
     Route::delete('/events/{id}', [EventController::class, 'delete']);
     Route::get('/my-events', [EventController::class, 'organizationEvents']);
+    
     Route::post('/tickets/validate', [TicketController::class, 'validateTicket']);
+    //fundraising routes
+    Route::post('/fundraising', [FundraisingController::class, 'store']);
+    Route::put('/fundraising/{id}', [FundraisingController::class, 'update']);
 });
 
+    Route::get('/fundraising', [FundraisingController::class, 'index']);
+    Route::get('/fundraising/{id}', [FundraisingController::class, 'show']);
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/events/{eventId}/tickets', [TicketController::class, 'store']);
 });
+
+
+
+
+
