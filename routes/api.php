@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\DonationController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\FundraisingController;
 use Illuminate\Http\Request;
@@ -45,11 +46,12 @@ Route::middleware(['auth:sanctum', OrganizationMiddleware::class])->group(functi
     Route::put('/fundraising/{id}', [FundraisingController::class, 'update']);
 });
 
-    Route::get('/fundraising', [FundraisingController::class, 'index']);
-    Route::get('/fundraising/{id}', [FundraisingController::class, 'show']);
+Route::get('/fundraising', [FundraisingController::class, 'index']);
+Route::get('/fundraising/{id}', [FundraisingController::class, 'show']);
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/events/{eventId}/tickets', [TicketController::class, 'store']);
+    Route::post('/fundraising/{fundraisingId}/donate', [DonationController::class, 'store']);
 });
 
 

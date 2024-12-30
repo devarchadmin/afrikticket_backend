@@ -36,8 +36,7 @@ class FundraisingController extends Controller
 
     public function show($id)
     {
-        // $fundraising = Fundraising::with(['organization', 'donations'])
-        $fundraising = Fundraising::with(['organization'])
+        $fundraising = Fundraising::with(['organization', 'donations'])
             ->findOrFail($id);
 
         return response()->json(['status' => 'success', 'data' => $fundraising]);
