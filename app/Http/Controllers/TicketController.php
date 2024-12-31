@@ -71,4 +71,39 @@ class TicketController extends Controller
             return response()->json(['message' => 'Invalid token'], 400);
         }
     }
+
+    public function myTicket(Request $request)
+    {
+        $tickets = Ticket::where('user_id', Auth::id())
+            ->with(['event.organization'])
+            ->get()
+            ->groupBy(function ($ticket) {
+                return $ticket->event->date < now()
+                    ? 'past'
+                    : ($ticket->event->date->isToday() ? 'today' : 'upcoming');
+            });
+
+        $summary = [
+            'total_tickets' => array_sum(array_map('count', $tickets->toArray())),
+            'total_spent' => array_sum(array_map(function ($group) {
+                return collect($group)->sum('price');
+            }, $tickets->toArray())),
+            'upcoming_events' => isset($tickets['upcoming']) ? count($tickets['upcoming']) : 0,
+            'past_events' => isset($tickets['past']) ? count($tickets['past']) : 0,
+            'today_events' => isset($tickets['today']) ? count($tickets['today']) : 0
+        ];
+
+        return response()->json([
+            'status' => 'success',
+            'data' => [
+                'tickets' => [
+                    'past' => $tickets['past'] ?? [],
+                    'today' => $tickets['today'] ?? [],
+                    'upcoming' => $tickets['upcoming'] ?? []
+                ],
+                'summary' => $summary
+            ]
+        ]);
+    }
+
 }

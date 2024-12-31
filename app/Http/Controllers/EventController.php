@@ -18,8 +18,8 @@ class EventController extends Controller
     {
         if (Auth::user()->role !== 'organization' && Auth::user()->role !== 'admin') {
             return response()->json([
-            'status' => 'error',
-            'message' => 'Unauthorized'
+                'status' => 'error',
+                'message' => 'Unauthorized'
             ], 403);
         }
         $validated = $request->validate([
@@ -44,7 +44,6 @@ class EventController extends Controller
     }
 
     public function show(Event $id)
-
     {
         $event = Event::find($id);
         $event->load(['organization']);
@@ -56,11 +55,11 @@ class EventController extends Controller
     public function update(Request $request, $id)
     {
         $event = Event::findOrFail($id);
-        
+
         if (Auth::user()->role !== 'admin' && Auth::user()->organization->id !== $event->organization_id) {
             return response()->json([
-            'status' => 'error',
-            'message' => 'Unauthorized'
+                'status' => 'error',
+                'message' => 'Unauthorized'
             ], 403);
         }
 
@@ -83,18 +82,18 @@ class EventController extends Controller
         ]);
     }
 
-    public function delete( $id)
+    public function delete($id)
     {
         // return response()->json(["hello"]);
         $event = Event::findOrFail($id);
-        
+
         if (Auth::user()->role !== 'admin' && Auth::user()->organization->id !== $event->organization_id) {
             return response()->json([
-            'status' => 'error',
-            'message' => 'Unauthorized'
+                'status' => 'error',
+                'message' => 'Unauthorized'
             ], 403);
         }
-        
+
         return response()->json([
             'status' => 'success',
             'message' => 'Event deleted successfully'
@@ -109,10 +108,73 @@ class EventController extends Controller
             ], 403);
         }
 
-        $events = Event::where('organization_id', Auth::user()->organization->id)->get();
+        $events = Event::with(['tickets'])
+            ->where('organization_id', Auth::user()->organization->id)
+            ->get()
+            ->map(function ($event) {
+                return [
+                    'event' => $event,
+                    'stats' => [
+                        'total_tickets' => $event->tickets->count(),
+                        'tickets_remaining' => $event->max_tickets - $event->tickets->count(),
+                        'revenue' => $event->tickets->count() * $event->price,
+                        'occupancy_rate' => ($event->tickets->count() / $event->max_tickets) * 100,
+                        'is_sold_out' => $event->tickets->count() >= $event->max_tickets,
+                        'status' => $event->date < now() ? 'past' : ($event->date->isToday() ? 'today' : 'upcoming')
+                    ]
+                ];
+            });
+
+        $totalRevenue = $events->sum(function ($event) {
+            return $event['stats']['revenue'];
+        });
+
         return response()->json([
             'status' => 'success',
-            'data' => $events
+            'data' => [
+                'events' => $events,
+                'summary' => [
+                    'total_events' => $events->count(),
+                    'total_revenue' => $totalRevenue,
+                    'active_events' => $events->where('event.status', 'active')->count(),
+                    'upcoming_events' => $events->where('stats.status', 'upcoming')->count(),
+                    'past_events' => $events->where('stats.status', 'past')->count()
+                ]
+            ]
+        ]);
+    }
+    public function userEvents()
+    {
+        $user = auth()->user();
+        $now = now();
+
+        $events = Event::whereHas('tickets', function ($query) use ($user) {
+            $query->where('user_id', $user->id);
+        })
+            ->with([
+                    'organization',
+                    'tickets' => function ($query) use ($user) {
+                        $query->where('user_id', $user->id);
+                    }
+                ])
+            ->get()
+            ->groupBy(function ($event) use ($now) {
+                if ($event->date < $now) {
+                    return 'past';
+                } elseif ($event->date->isToday()) {
+                    return 'present';
+                } else {
+                    return 'upcoming';
+                }
+            });
+
+        return response()->json([
+            'status' => 'success',
+            'data' => [
+                'past' => $events['past'] ?? [],
+                'present' => $events['present'] ?? [],
+                'upcoming' => $events['upcoming'] ?? []
+            ]
         ]);
     }
 }

@@ -1,0 +1,74 @@
+Authentication System
+
+    . User registration with roles (user, organization, admin)
+    . Login functionality
+    . Token-based authentication using Laravel Sanctum
+    . Role-based middleware
+
+Organization Management
+
+    . Organization registration
+    . Document upload (ICD & commerce register)
+    . Organization status management (pending/approved/rejected)
+
+Event Management
+
+    . CRUD operations for events
+    . Event listing and filtering
+    . Ticket management system with JWT tokens
+    . Event-organization relationship
+
+Fundraising System
+
+    . CRUD operations for fundraising campaigns
+    . Donation functionality
+    . Progress tracking
+    . Status management (active/completed/cancelled)
+
+Ticket System
+
+    . Ticket purchase
+    . JWT token generation
+    . Ticket validation
+    . Availability checking
+
+Missing/To Be Implemented
+User Features
+
+    . User profile management/editing
+    . Password reset functionality
+    . Email verification
+    . User dashboard showing tickets and donations
+    . Profile image upload functionality
+
+Organization Dashboard
+
+    . Analytics and statistics
+    . Revenue tracking
+    . Event performance metrics
+    . Fundraising campaign analytics
+
+Admin Panel
+
+    . Organization approval workflow
+    . User management interface
+    . System statistics
+    . Activity logs
+    . Configuration settings
+
+Additional Features
+
+    . Payment gateway integration
+    . Email notifications
+    . Event categories
+    . Search functionality
+    . Reporting system
+    . File management system
+    . Data export functionality
+
+Security Enhancements
+
+    . Two-factor authentication
+    . Rate limiting
+    . Enhanced validation
+    . Session management

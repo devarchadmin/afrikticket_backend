@@ -6,6 +6,7 @@ use App\Models\Donation;
 use App\Models\Fundraising;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class DonationController extends Controller
 {
@@ -57,5 +58,38 @@ class DonationController extends Controller
                 'message' => 'Failed to make donation'
             ], 500);
         }
+    }
+
+
+    public function myDonations()
+    {
+        $donations = Donation::where('user_id', Auth::id())
+            ->with(['fundraising:id,title,goal,current,organization_id', 'fundraising.organization:id,name'])
+            ->get()
+            ->groupBy(function ($donation) {
+                return $donation->created_at->format('Y-m');
+            });
+
+        $summary = [
+            'total_donations' => $donations->flatten()->count(),
+            'total_amount' => $donations->flatten()->sum('amount'),
+            'average_donation' => $donations->flatten()->avg('amount'),
+            'supported_causes' => $donations->flatten()->unique('fundraising_id')->count(),
+            'monthly_stats' => $donations->map(function ($group) {
+                return [
+                    'count' => $group->count(),
+                    'total' => $group->sum('amount'),
+                    'average' => $group->avg('amount')
+                ];
+            })
+        ];
+
+        return response()->json([
+            'status' => 'success',
+            'data' => [
+                'donations' => $donations,
+                'summary' => $summary
+            ]
+        ]);
     }
 }

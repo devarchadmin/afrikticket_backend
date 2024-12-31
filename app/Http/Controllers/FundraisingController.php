@@ -8,13 +8,42 @@ use Illuminate\Http\Request;
 class FundraisingController extends Controller
 {
     public function index()
-    {
-        $fundraisings = Fundraising::with('organization')
-            ->where('status', 'active')
-            ->get();
-        
-        return response()->json(['status' => 'success', 'data' => $fundraisings]);
-    }
+{
+    $fundraisings = Fundraising::with(['organization', 'donations'])
+        ->where('status', 'active')
+        ->get()
+        ->map(function ($fundraising) {
+            return [
+                'fundraising' => $fundraising,
+                'stats' => [
+                    'total_donors' => $fundraising->donations->count(),
+                    'total_raised' => $fundraising->donations->sum('amount'),
+                    'progress_percentage' => $fundraising->goal > 0 
+                        ? round(($fundraising->donations->sum('amount') / $fundraising->goal) * 100, 2)
+                        : 0,
+                    'remaining_amount' => max(0, $fundraising->goal - $fundraising->donations->sum('amount')),
+                    'average_donation' => $fundraising->donations->count() > 0 
+                        ? round($fundraising->donations->avg('amount'), 2)
+                        : 0
+                ]
+            ];
+        });
+
+    $summary = [
+        'total_fundraisings' => $fundraisings->count(),
+        'total_raised' => $fundraisings->sum('stats.total_raised'),
+        'total_donors' => $fundraisings->sum('stats.total_donors'),
+        'average_progress' => $fundraisings->avg('stats.progress_percentage')
+    ];
+
+    return response()->json([
+        'status' => 'success',
+        'data' => [
+            'fundraisings' => $fundraisings,
+            'summary' => $summary
+        ]
+    ]);
+}
 
     public function store(Request $request)
     {
@@ -67,5 +96,34 @@ class FundraisingController extends Controller
             'message' => 'Fundraising updated successfully',
             'data' => $fundraising
         ]);
+    }
+
+    public function organizationFundraisings(Request $request)
+    {
+        $fundraisings = Fundraising::withCount('donations')
+            ->withSum('donations', 'amount')
+            ->where('organization_id', $request->user()->organization->id)
+            ->get()
+            ->map(function ($fundraising) {
+                return [
+                    'id' => $fundraising->id,
+                    'title' => $fundraising->title,
+                    'description' => $fundraising->description,
+                    'goal' => $fundraising->goal,
+                    'status' => $fundraising->status,
+                    'stats' => [
+                        'total_donors' => $fundraising->donations_count,
+                        'total_raised' => $fundraising->donations_sum_amount ?? 0,
+                        'progress_percentage' => $fundraising->goal > 0 
+                            ? round(($fundraising->donations_sum_amount ?? 0) / $fundraising->goal * 100, 2) 
+                            : 0,
+                        'remaining_amount' => max(0, $fundraising->goal - ($fundraising->donations_sum_amount ?? 0))
+                    ],
+                    'created_at' => $fundraising->created_at,
+                    'updated_at' => $fundraising->updated_at
+                ];
+            });
+        
+        return response()->json(['status' => 'success', 'data' => $fundraisings]);
     }
 }

@@ -38,12 +38,13 @@ Route::middleware(['auth:sanctum', OrganizationMiddleware::class])->group(functi
     Route::post('/events', [EventController::class, 'store']);
     Route::put('/events/{id}', [EventController::class, 'update']);
     Route::delete('/events/{id}', [EventController::class, 'delete']);
-    Route::get('/my-events', [EventController::class, 'organizationEvents']);
+    Route::get('/org/events', [EventController::class, 'organizationEvents']);
     
     Route::post('/tickets/validate', [TicketController::class, 'validateTicket']);
     //fundraising routes
     Route::post('/fundraising', [FundraisingController::class, 'store']);
     Route::put('/fundraising/{id}', [FundraisingController::class, 'update']);
+    Route::get('/org/fundraisings', [FundraisingController::class, 'organizationFundraisings']);
 });
 
 Route::get('/fundraising', [FundraisingController::class, 'index']);
@@ -51,7 +52,13 @@ Route::get('/fundraising/{id}', [FundraisingController::class, 'show']);
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/events/{eventId}/tickets', [TicketController::class, 'store']);
+
     Route::post('/fundraising/{fundraisingId}/donate', [DonationController::class, 'store']);
+    Route::get('/user/donations', [DonationController::class, 'myDonations']);
+
+    Route::get('/user/tickets', [TicketController::class,'myTicket']);
+    Route::get('/user/events', [EventController::class, 'userEvents']);
+
 });
 
 
