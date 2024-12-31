@@ -102,22 +102,16 @@ class AuthController extends Controller
     // Get the authenticated user
     public function getUser(Request $request)
     {
-        $user = $request->user()->load(['organization', 'admin']);
+        $user = $request->user();
+        
+        if ($user->role === 'organization') {
+            $user->load(['organization']);
+            $user->organization->showSensitiveData();
+        }
+
         return response()->json([
             'status' => 'success',
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'role' => $user->role,
-                'phone' => $user->phone,
-                'profile_image' => $user->profile_image,
-                'organization' => $user->when($user->role === 'organization', 
-                    fn() => $user->organization),
-                'admin' => $user->when($user->role === 'admin', 
-                    fn() => $user->admin),
-                'created_at' => $user->created_at
-            ]
+            'data' => $user
         ]);
     }
     // Logout the authenticated user

@@ -16,10 +16,29 @@ class Organization extends Model
         'description',
         'status',
         'icd_document',
-    'commerce_register',
+        'commerce_register',
         'user_id'
     ];
 
+    // Hide sensitive fields by default
+    protected $hidden = [
+        'icd_document',
+        'commerce_register'
+    ];
+
+    // Create a visible version with documents for organization owners
+    protected $organizationOwnerVisible = [
+        'id', 'name', 'email', 'phone', 'description', 
+        'status', 'icd_document', 'commerce_register', 
+        'user_id', 'created_at', 'updated_at'
+    ];
+
+    public function showSensitiveData()
+    {
+        $this->makeVisible(['icd_document', 'commerce_register']);
+        return $this;
+    }
+    
     public function user()
     {
         return $this->belongsTo(User::class);
