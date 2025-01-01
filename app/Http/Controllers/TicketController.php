@@ -16,6 +16,11 @@ class TicketController extends Controller
         $event = Event::findOrFail($eventId);
         $quantity = $request->input('quantity', 1); // Default to 1 if not specified
 
+        // Check if event date has passed
+        if ($event->date < now()) {
+            return response()->json(['message' => 'Event has already passed'], 400);
+        }
+
         // Check if tickets are still available
         $totalTicketsSold = Ticket::where('event_id', $eventId)->count();
         if ($totalTicketsSold + $quantity > $event->max_tickets) {

@@ -23,6 +23,7 @@ class Organization extends Model
     // Hide sensitive fields by default
     protected $hidden = [
         'icd_document',
+        'status',
         'commerce_register'
     ];
 

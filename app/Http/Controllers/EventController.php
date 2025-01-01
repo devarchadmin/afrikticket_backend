@@ -43,12 +43,10 @@ class EventController extends Controller
         ], 201);
     }
 
-    public function show(Event $id)
+    public function show($id)
     {
         $event = Event::find($id);
-        $event->load(['organization']);
-        //add fundraising and tickets later when it is implemented
-        // $event->load(['organization', 'fundraising', 'tickets']);
+        $event->load(['organization', 'fundraising', 'tickets']);
         return response()->json(['status' => 'success', 'data' => $event], 201);
     }
 
