@@ -18,8 +18,8 @@ class Event extends Model
         'max_tickets',
         'price',
         'organization_id',
-        // 'fundraising_id',
-        'status'
+        'status',
+        'duration'
     ];
 
     protected $casts = [

@@ -8,11 +8,44 @@ use Illuminate\Support\Facades\Auth;
 
 class EventController extends Controller
 {
-    public function index()
-    {
-        $events = Event::with(['organization'])->where('status', 'active')->get();
-        return response()->json(['status' => 'success', 'data' => $events], 201);
+    private function calculateEndTime($startDate, $duration)
+{
+    preg_match('/(\d+)\s*(hour|day|week)s?/', $duration, $matches);
+    if (count($matches) >= 3) {
+        $value = (int) $matches[1];
+        $unit = $matches[2];
+        return \Carbon\Carbon::parse($startDate)->add(
+            $unit === 'hour' ? $value . ' hours' : 
+            ($unit === 'day' ? $value . ' days' : $value . ' weeks')
+        );
     }
+    return \Carbon\Carbon::parse($startDate)->addHours(2); // Default 2 hours
+}
+    public function index()
+{
+    $events = Event::with(['organization'])
+        ->where('status', 'active')
+        ->get()
+        ->map(function ($event) {
+            $ticketsSold = $event->tickets()->count();
+            $endTime = $this->calculateEndTime($event->date, $event->duration);
+            
+            return [
+                'id' => $event->id,
+                'title' => $event->title,
+                'description' => $event->description,
+                'start_date' => $event->date,
+                'end_date' => $endTime,
+                'duration' => $event->duration,
+                'location' => $event->location,
+                'remaining_tickets' => $event->max_tickets - $ticketsSold,
+                'time_remaining' => now()->diffForHumans($event->date, ['parts' => 2]),
+                'is_ongoing' => now()->between($event->date, $endTime),
+                'organization' => $event->organization
+            ];
+        });
+    return response()->json(['status' => 'success', 'data' => $events], 201);
+}
 
     public function store(Request $request)
     {
@@ -22,6 +55,7 @@ class EventController extends Controller
                 'message' => 'Unauthorized'
             ], 403);
         }
+
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required|string',
@@ -29,8 +63,7 @@ class EventController extends Controller
             'location' => 'required|string',
             'max_tickets' => 'required|integer|min:1',
             'price' => 'required|numeric|min:0',
-            // 'fundraising_id' => 'nullable|exists:fundraisings,id'
-            // 'fundraising_id' => 'nullable'
+            'duration' => 'required|numeric|min:0'
         ]);
 
         $validated['organization_id'] = Auth::user()->organization->id;
@@ -45,9 +78,29 @@ class EventController extends Controller
 
     public function show($id)
     {
-        $event = Event::find($id);
-        $event->load(['organization', 'fundraising', 'tickets']);
-        return response()->json(['status' => 'success', 'data' => $event], 201);
+        $event = Event::findOrFail($id);
+        $event->load(['organization', 'tickets']);
+        
+        $endTime = $this->calculateEndTime($event->date, $event->duration);
+        $ticketsSold = $event->tickets->count();
+    
+        $eventData = [
+            'event' => $event,
+            'timing' => [
+                'start_date' => $event->date,
+                'end_date' => $endTime,
+                'duration' => $event->duration,
+                'is_ongoing' => now()->between($event->date, $endTime),
+                'time_remaining' => now()->diffForHumans($event->date, ['parts' => 2])
+            ],
+            'tickets' => [
+                'sold' => $ticketsSold,
+                'remaining' => $event->max_tickets - $ticketsSold,
+                'total' => $event->max_tickets
+            ]
+        ];
+    
+        return response()->json(['status' => 'success', 'data' => $eventData], 200);
     }
 
     public function update(Request $request, $id)
@@ -62,13 +115,13 @@ class EventController extends Controller
         }
 
         $validated = $request->validate([
-            'title' => 'sometimes|string|max:255',
-            'description' => 'sometimes|string',
-            'date' => 'sometimes|date|after:now',
-            'location' => 'sometimes|string',
-            'max_tickets' => 'sometimes|integer|min:1',
-            'price' => 'sometimes|numeric|min:0',
-            'status' => 'sometimes|in:active,cancelled'
+            'title' => 'required|string|max:255',
+            'description' => 'required|string',
+            'date' => 'required|date|after:now',
+            'location' => 'required|string',
+            'max_tickets' => 'required|integer|min:1',
+            'price' => 'required|numeric|min:0',
+            'duration' => 'required|numeric|min:0'
         ]);
 
         $event->update($validated);
@@ -82,7 +135,7 @@ class EventController extends Controller
 
     public function delete($id)
     {
-        // return response()->json(["hello"]);
+        
         $event = Event::findOrFail($id);
 
         if (Auth::user()->role !== 'admin' && Auth::user()->organization->id !== $event->organization_id) {
@@ -150,11 +203,11 @@ class EventController extends Controller
             $query->where('user_id', $user->id);
         })
             ->with([
-                    'organization',
-                    'tickets' => function ($query) use ($user) {
-                        $query->where('user_id', $user->id);
-                    }
-                ])
+                'organization',
+                'tickets' => function ($query) use ($user) {
+                    $query->where('user_id', $user->id);
+                }
+            ])
             ->get()
             ->groupBy(function ($event) use ($now) {
                 if ($event->date < $now) {

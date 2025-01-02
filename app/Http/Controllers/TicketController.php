@@ -28,6 +28,7 @@ class TicketController extends Controller
         }
 
         $tickets = [];
+
         for ($i = 0; $i < $quantity; $i++) {
             // Generate JWT token
             $payload = [
@@ -78,37 +79,54 @@ class TicketController extends Controller
     }
 
     public function myTicket(Request $request)
-    {
-        $tickets = Ticket::where('user_id', Auth::id())
-            ->with(['event.organization'])
-            ->get()
-            ->groupBy(function ($ticket) {
-                return $ticket->event->date < now()
-                    ? 'past'
-                    : ($ticket->event->date->isToday() ? 'today' : 'upcoming');
-            });
+{
+    // Get all tickets with their events
+    $tickets = Ticket::with(['event' => function($query) {
+        $query->select('id', 'title', 'date', 'price', 'organization_id');
+    }])
+    ->where('user_id', Auth::id())
+    ->get();
 
-        $summary = [
-            'total_tickets' => array_sum(array_map('count', $tickets->toArray())),
-            'total_spent' => array_sum(array_map(function ($group) {
-                return collect($group)->sum('price');
-            }, $tickets->toArray())),
-            'upcoming_events' => isset($tickets['upcoming']) ? count($tickets['upcoming']) : 0,
-            'past_events' => isset($tickets['past']) ? count($tickets['past']) : 0,
-            'today_events' => isset($tickets['today']) ? count($tickets['today']) : 0
-        ];
+    // Debug log
+    // \Log::info('Tickets found:', ['count' => $tickets->count(), 'tickets' => $tickets]);
 
-        return response()->json([
-            'status' => 'success',
-            'data' => [
-                'tickets' => [
-                    'past' => $tickets['past'] ?? [],
-                    'today' => $tickets['today'] ?? [],
-                    'upcoming' => $tickets['upcoming'] ?? []
-                ],
-                'summary' => $summary
-            ]
-        ]);
-    }
+    // Group tickets by event date status
+    $groupedTickets = $tickets->groupBy(function ($ticket) {
+        if (!$ticket->event) {
+            return 'unknown';
+        }
+        $eventDate = \Carbon\Carbon::parse($ticket->event->date);
+        $now = now();
+        
+        if ($eventDate < $now) {
+            return 'past';
+        } elseif ($eventDate->isToday()) {
+            return 'today';
+        } else {
+            return 'upcoming';
+        }
+    });
+
+    // Calculate summary
+    $summary = [
+        'total_tickets' => $tickets->count(),
+        'total_spent' => $tickets->sum('price'),
+        'upcoming_events' => $groupedTickets->get('upcoming', collect())->count(),
+        'past_events' => $groupedTickets->get('past', collect())->count(),
+        'today_events' => $groupedTickets->get('today', collect())->count()
+    ];
+
+    return response()->json([
+        'status' => 'success',
+        'data' => [
+            'tickets' => [
+                'past' => $groupedTickets->get('past', []),
+                'today' => $groupedTickets->get('today', []),
+                'upcoming' => $groupedTickets->get('upcoming', [])
+            ],
+            'summary' => $summary
+        ]
+    ]);
+}
 
 }

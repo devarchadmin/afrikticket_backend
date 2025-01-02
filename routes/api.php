@@ -24,14 +24,6 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::get('/events', [EventController::class, 'index']);
 Route::get('/events/{id}', [EventController::class, 'show']);
 
-// Admin routes
-// Route::middleware(['auth:sanctum', AdminMiddleware::class])->group(function () {
-//     // Admin only routes here
-//     Route::get('/admin/users', [AdminController::class, 'getAllUsers']);
-//     Route::get('/admin/organizations', [AdminController::class, 'getAllOrganizations']);
-//     Route::put('/admin/organizations/{id}/status', [AdminController::class, 'updateOrganizationStatus']);
-// });
-
 // Organization routes
 Route::middleware(['auth:sanctum', OrganizationMiddleware::class])->group(function () {
     // Organization only routes here
@@ -60,6 +52,14 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/user/events', [EventController::class, 'userEvents']);
 
 });
+
+// Admin routes
+// Route::middleware(['auth:sanctum', AdminMiddleware::class])->group(function () {
+//     // Admin only routes here
+//     Route::get('/admin/users', [AdminController::class, 'getAllUsers']);
+//     Route::get('/admin/organizations', [AdminController::class, 'getAllOrganizations']);
+//     Route::put('/admin/organizations/{id}/status', [AdminController::class, 'updateOrganizationStatus']);
+// });
 
 
 
