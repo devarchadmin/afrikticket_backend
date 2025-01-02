@@ -36,7 +36,10 @@ class Event extends Model
     {
         return $this->belongsTo(Fundraising::class);
     }
-
+    public function images()
+    {
+        return $this->hasMany(EventImage::class);
+    }
     public function tickets()
     {
         return $this->hasMany(Ticket::class);

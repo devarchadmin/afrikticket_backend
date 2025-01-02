@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Event;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class EventController extends Controller
 {
@@ -63,23 +64,46 @@ class EventController extends Controller
             'location' => 'required|string',
             'max_tickets' => 'required|integer|min:1',
             'price' => 'required|numeric|min:0',
-            'duration' => 'required|numeric|min:0'
+            'duration' => 'required|numeric|min:0',
+            'images' => 'required|array|min:1',
+            'images.*' => 'image|mimes:jpeg,png,jpg|max:2048'
         ]);
 
         $validated['organization_id'] = Auth::user()->organization->id;
-        $event = Event::create($validated);
+        
+        DB::beginTransaction();
+        try {
+            $event = Event::create($validated);
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Event created successfully',
-            'data' => $event
-        ], 201);
+            // Handle image uploads
+            foreach ($request->file('images') as $index => $image) {
+                $path = $image->store('events/images', 'public');
+                $event->images()->create([
+                    'image_path' => $path,
+                    'is_main' => $index === 0 // First image is main
+                ]);
+            }
+
+            DB::commit();
+            
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Event created successfully',
+                'data' => $event->load('images')
+            ], 201);
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to create event'
+            ], 500);
+        }
     }
 
     public function show($id)
     {
         $event = Event::findOrFail($id);
-        $event->load(['organization', 'tickets']);
+        $event->load(['organization', 'tickets', 'images']);
         
         $endTime = $this->calculateEndTime($event->date, $event->duration);
         $ticketsSold = $event->tickets->count();
@@ -97,6 +121,10 @@ class EventController extends Controller
                 'sold' => $ticketsSold,
                 'remaining' => $event->max_tickets - $ticketsSold,
                 'total' => $event->max_tickets
+            ],
+            'images' => [
+                'main' => $event->images->where('is_main', true)->first(),
+                'gallery' => $event->images->where('is_main', false)->values()
             ]
         ];
     
@@ -115,22 +143,53 @@ class EventController extends Controller
         }
 
         $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'required|string',
-            'date' => 'required|date|after:now',
-            'location' => 'required|string',
-            'max_tickets' => 'required|integer|min:1',
-            'price' => 'required|numeric|min:0',
-            'duration' => 'required|numeric|min:0'
+            'title' => 'sometimes|string|max:255',
+            'description' => 'sometimes|string',
+            'date' => 'sometimes|date|after:now',
+            'location' => 'sometimes|string',
+            'max_tickets' => 'sometimes|integer|min:1',
+            'price' => 'sometimes|numeric|min:0',
+            'duration' => 'sometimes|numeric|min:0',
+            'images' => 'sometimes|array',
+            'images.*' => 'image|mimes:jpeg,png,jpg|max:2048',
+            'remove_images' => 'sometimes|array',
+            'remove_images.*' => 'exists:event_images,id'
         ]);
 
-        $event->update($validated);
+        DB::beginTransaction();
+        try {
+            $event->update($validated);
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Event updated successfully',
-            'data' => $event
-        ]);
+            // Remove images if specified
+            if ($request->has('remove_images')) {
+                $event->images()->whereIn('id', $request->remove_images)->delete();
+            }
+
+            // Add new images
+            if ($request->hasFile('images')) {
+                foreach ($request->file('images') as $image) {
+                    $path = $image->store('events/images', 'public');
+                    $event->images()->create([
+                        'image_path' => $path,
+                        'is_main' => false
+                    ]);
+                }
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Event updated successfully',
+                'data' => $event->load('images')
+            ]);
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to update event'
+            ], 500);
+        }
     }
 
     public function delete($id)
@@ -159,12 +218,12 @@ class EventController extends Controller
             ], 403);
         }
 
-        $events = Event::with(['tickets'])
+        $events = Event::with(['tickets', 'images'])
             ->where('organization_id', Auth::user()->organization->id)
             ->get()
             ->map(function ($event) {
                 return [
-                    'event' => $event,
+                    'event' => $event, 
                     'stats' => [
                         'total_tickets' => $event->tickets->count(),
                         'tickets_remaining' => $event->max_tickets - $event->tickets->count(),
@@ -204,6 +263,7 @@ class EventController extends Controller
         })
             ->with([
                 'organization',
+                'images',
                 'tickets' => function ($query) use ($user) {
                     $query->where('user_id', $user->id);
                 }

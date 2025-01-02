@@ -32,7 +32,10 @@ class Fundraising extends Model
     {
         return $this->hasMany(Donation::class);
     }
-
+    public function images()
+    {
+        return $this->hasMany(FundraisingImage::class);
+    }
     public function events()
     {
         return $this->hasMany(Event::class);
