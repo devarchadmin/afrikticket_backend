@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\DonationController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\FundraisingController;
@@ -37,6 +38,27 @@ Route::middleware(['auth:sanctum', OrganizationMiddleware::class])->group(functi
     Route::post('/fundraising', [FundraisingController::class, 'store']);
     Route::put('/fundraising/{id}', [FundraisingController::class, 'update']);
     Route::get('/org/fundraisings', [FundraisingController::class, 'organizationFundraisings']);
+});
+
+// Admin routes
+Route::middleware(['auth:sanctum', AdminMiddleware::class])->group(function () {
+    Route::get('/admin/dashboard/stats', [AdminController::class, 'getDashboardStats']);
+    Route::get('/admin/users', [AdminController::class, 'getAllUsers']);
+    Route::get('/admin/organizations', [AdminController::class, 'getAllOrganizations']);
+
+    // Pending content
+    Route::get('/admin/pending', [AdminController::class, 'getPendingContent']);
+    Route::get('/admin/pending/events', [AdminController::class, 'getPendingEvents']);
+    Route::get('/admin/pending/fundraisings', [AdminController::class, 'getPendingFundraisings']);
+    Route::get('/admin/pending/orgs', [AdminController::class, 'getPendingOrganizations']);
+
+    // Review content
+    Route::put('/admin/events/{id}/review', [AdminController::class, 'reviewEvent']);
+    Route::put('/admin/fundraisings/{id}/review', [AdminController::class, 'reviewFundraising']);
+    Route::put('/admin/organizations/{id}/status', [AdminController::class, 'updateOrganizationStatus']);
+
+    Route::delete('/admin/organizations/{id}', [AdminController::class, 'deleteOrganisation']);
+
 });
 
 Route::get('/fundraising', [FundraisingController::class, 'index']);

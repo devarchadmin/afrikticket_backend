@@ -25,7 +25,7 @@ class EventController extends Controller
     public function index()
 {
     $events = Event::with(['organization'])
-        ->where('status', 'active')
+        ->where('status', 'active') // Only show active events
         ->get()
         ->map(function ($event) {
             $ticketsSold = $event->tickets()->count();
@@ -70,6 +70,7 @@ class EventController extends Controller
         ]);
 
         $validated['organization_id'] = Auth::user()->organization->id;
+        $validated['status'] = 'pending'; // Add pending status
         
         DB::beginTransaction();
         try {
@@ -223,7 +224,8 @@ class EventController extends Controller
             ->get()
             ->map(function ($event) {
                 return [
-                    'event' => $event, 
+                    'event' => $event,
+                    'status' => $event->status, // Add status to response
                     'stats' => [
                         'total_tickets' => $event->tickets->count(),
                         'tickets_remaining' => $event->max_tickets - $event->tickets->count(),

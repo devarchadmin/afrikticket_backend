@@ -62,7 +62,7 @@ public function store(Request $request)
         $fundraising = Fundraising::create([
             ...$validated,
             'organization_id' => $request->user()->organization->id,
-            'status' => 'active',
+            'status' => 'pending', 
             'current' => 0
         ]);
 

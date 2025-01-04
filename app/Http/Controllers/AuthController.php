@@ -81,13 +81,22 @@ class AuthController extends Controller
             'password' => 'required'
         ]);
 
+        $user = User::where('email', $validated['email'])->first();
+        
+        // Check if user exists and is active
+        if (!$user || ($user->role === 'organization' && $user->organization->status !== 'approved')) {
+            throw ValidationException::withMessages([
+                'email' => ['Account not activated or pending approval.']
+            ])->status(401);
+        }
+
         if (!Auth::attempt($validated)) {
             throw ValidationException::withMessages([
                 'email' => ['The provided credentials are incorrect.']
             ])->status(401);
         }
 
-        $user = User::with('organization')->where('email', $validated['email'])->first();
+        $user->load('organization');
         $token = $user->createToken('auth-token')->plainTextToken;
 
         return response()->json([

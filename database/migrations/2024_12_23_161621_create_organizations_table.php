@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('icd_document')->nullable(); 
             $table->string('commerce_register')->nullable(); 
             $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
+            $table->text('rejection_reason')->nullable();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->timestamps();
         });

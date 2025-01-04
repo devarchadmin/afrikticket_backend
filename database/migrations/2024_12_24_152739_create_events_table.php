@@ -21,7 +21,8 @@ return new class extends Migration
             $table->decimal('price', 10, 2);
             $table->foreignId('organization_id')->constrained()->onDelete('cascade');
             $table->decimal('duration')->default(2);
-            $table->enum('status', ['active', 'cancelled'])->default('active');
+            $table->enum('status', ['pending','active', 'cancelled'])->default('pending');
+            $table->text('rejection_reason')->nullable();
             $table->timestamps();
         });
     }
