@@ -20,9 +20,9 @@ Route::middleware('auth:sanctum')->group(function () {
 //testing route that return a message
 Route::get('/hello-testing', function() {
     return response()->json([
-        'message' => 'Hello from AfrikTicket API!'
-    ]);
+        'message' => 'Hello from AfrikTicket API!' ]);
 });
+
 
 // // Public Routes
 Route::post('/register', [AuthController::class, 'register']);
