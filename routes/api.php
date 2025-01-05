@@ -17,6 +17,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 });
 
+//testing route that return a message
+Route::get('/hello', function() {
+    return response()->json([
+        'message' => 'Hello from AfrikTicket API!'
+    ]);
+});
 // // Public Routes
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);

@@ -1,66 +1,197 @@
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+# AfrikTicket Platform
 
-## About Laravel
+## About AfrikTicket
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+AfrikTicket is a comprehensive event ticketing and fundraising platform built with Laravel. It enables organizations to:
+- Create and manage events
+- Sell tickets
+- Run fundraising campaigns
+- Track donations and revenues
+- Generate detailed analytics
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Core Features
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### Authentication System
+- Multi-role user system (User, Organization, Admin)
+- Secure token-based authentication
+- Organization verification process
 
-## Learning Laravel
+### Event Management
+- Create and manage events
+- Ticket sales and validation
+- Event scheduling and tracking
+- Image uploads and management
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### Fundraising System
+- Create fundraising campaigns
+- Track donations and progress
+- Campaign status management
+- Real-time analytics
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+### Organization Dashboard
+- Revenue tracking
+- Event performance metrics
+- Donation analytics
+- Document management
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### Admin Panel
+- User management
+- Content moderation
+- Organization approval
+- System statistics
 
-## Laravel Sponsors
+## Requirements
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+- PHP >= 8.1
+- Composer
+- MySQL/MariaDB
+- Node.js & NPM
+- Laravel CLI
 
-### Premium Partners
+## Quick Setup
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+1. Clone the repository:
+```bash
+git clone https://github.com/devarchadmin/afrikticket_backend.git
+cd afrikticket_back
+```
+2. Install dependencies:
 
-## Contributing
+```bash
+composer install
+npm install
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+3. Environment setup:
+```bash
+cp .env.example .env
+php artisan key:generate
+```
+4. Configure your .env file with database credentials and other settings:
 
-## Code of Conduct
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=your_database
+DB_USERNAME=your_username
+DB_PASSWORD=your_password
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+JWT_SECRET=your_jwt_secret
 
-## Security Vulnerabilities
+5. Run migrations: 
+```bash
+php artisan migrate
+```
+```bash
+php artisan serve
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+API Documentation
 
-## License
+## Base URL
+http://localhost:8000/api
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## User Types
+1. Regular User
+2. Organization
+3. Admin
+
+## Key Features
+
+### 1. Authentication
+- Registration (`POST /register`)
+- Login (`POST /login`)
+- Logout (`POST /logout`) [Protected]
+- Get User Profile (`GET /user`) [Protected]
+
+### 2. Events
+- List Events (`GET /events`)
+- Get Single Event (`GET /events/{id}`)
+- Create Event (`POST /events`) [Organization Only]
+- Update Event (`PUT /events/{id}`) [Organization Only]
+- Delete Event (`DELETE /events/{id}`) [Organization Only]
+- Organization Events (`GET /org/events`) [Organization Only]
+- User Events (`GET /user/events`) [Protected]
+
+### 3. Tickets
+- Purchase Tickets (`POST /events/{eventId}/tickets`) [Protected]
+- Validate Ticket (`POST /tickets/validate`) [Organization Only]
+- User Tickets (`GET /user/tickets`) [Protected]
+
+### 4. Fundraising
+- List Fundraisings (`GET /fundraising`)
+- Get Single Fundraising (`GET /fundraising/{id}`)
+- Create Fundraising (`POST /fundraising`) [Organization Only]
+- Update Fundraising (`PUT /fundraising/{id}`) [Organization Only]
+- Organization Fundraisings (`GET /org/fundraisings`) [Organization Only]
+
+### 5. Donations
+- Make Donation (`POST /fundraising/{fundraisingId}/donate`) [Protected]
+- User Donations (`GET /user/donations`) [Protected]
+
+### 6. Organization Dashboard
+- Get Dashboard Stats (`GET /organization/dashboard`) [Organization Only]
+  - Events statistics
+  - Revenue data
+  - Ticket sales
+  - Fundraising progress
+
+### 7. Admin Features
+- Dashboard Stats (`GET /admin/dashboard/stats`)
+- User Management (`GET /admin/users`)
+- Organization Management
+  - List (`GET /admin/organizations`)
+  - Review (`PUT /admin/organizations/{id}/status`)
+  - Delete (`DELETE /admin/organizations/{id}`)
+- Content Moderation
+  - Pending Content (`GET /admin/pending`)
+  - Review Event (`PUT /admin/events/{id}/review`)
+  - Review Fundraising (`PUT /admin/fundraisings/{id}/review`)
+
+## Important Notes
+
+### Organization Registration
+- Organizations must upload required documents (ICD & commerce register)
+- Organization accounts require admin approval before activation
+- Status can be: pending, approved, or rejected
+
+### Event Creation
+- Events require admin approval before becoming visible
+- Include image uploads
+- Set ticket quantities and pricing
+- Status can be: pending, active, or cancelled
+
+### Fundraising Campaigns
+- Require admin approval
+- Include goal amount and description
+- Track progress and donations
+- Status can be: pending, active, completed, or cancelled
+
+### File Upload Requirements
+- Images: jpeg, png, jpg (max 2MB)
+- Documents: pdf, jpg, jpeg, png (max 2MB)
+
+## Testing Locally
+1. Clone the repository
+2. Install dependencies: `composer install`
+3. Copy `.env.example` to `.env` and configure database
+4. Run migrations: `php artisan migrate`
+5. Generate app key: `php artisan key:generate`
+6. Start server: `php artisan serve`
+
+## Postman Collection
+A complete Postman collection will be provided separately with:
+- Pre-configured environments
+- Request examples
+- Test data
+- Authentication flows
+
+## Error Handling
+The API returns consistent error responses:
+```json
+{
+    "status": "error",
+    "message": "Error description"
+}
