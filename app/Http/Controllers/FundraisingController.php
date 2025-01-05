@@ -195,4 +195,49 @@ public function destroy($id)
         'message' => 'Fundraising deleted successfully'
     ]);
 }
+public function organizationFundraisings(Request $request)
+{
+    $fundraisings = Fundraising::withCount('donations')
+        ->withSum('donations', 'amount')
+        ->where('organization_id', $request->user()->organization->id)
+        ->get()
+        ->map(function ($fundraising) {
+            return [
+                'id' => $fundraising->id,
+                'title' => $fundraising->title,
+                'description' => $fundraising->description,
+                'goal' => $fundraising->goal,
+                'status' => $fundraising->status,
+                'stats' => [
+                    'total_donors' => $fundraising->donations_count,
+                    'total_raised' => $fundraising->donations_sum_amount ?? 0,
+                    'progress_percentage' => $fundraising->goal > 0 
+                        ? round(($fundraising->donations_sum_amount ?? 0) / $fundraising->goal * 100, 2) 
+                        : 0,
+                    'remaining_amount' => max(0, $fundraising->goal - ($fundraising->donations_sum_amount ?? 0))
+                ],
+                'created_at' => $fundraising->created_at,
+                'updated_at' => $fundraising->updated_at
+            ];
+        });
+
+    $summary = [
+        'total_fundraisings' => $fundraisings->count(),
+        'total_goal_amount' => $fundraisings->sum('goal'),
+        'total_raised' => $fundraisings->sum('stats.total_raised'),
+        'total_donors' => $fundraisings->sum('stats.total_donors'),
+        'average_progress' => $fundraisings->avg('stats.progress_percentage'),
+        'total_remaining' => $fundraisings->sum('stats.remaining_amount'),
+        'active_fundraisings' => $fundraisings->where('status', 'active')->count()
+    ];
+    
+    return response()->json([
+        'status' => 'success', 
+        'data' => [
+            'fundraisings' => $fundraisings,
+            'summary' => $summary
+        ]
+    ]);
 }
+}
+

@@ -4,6 +4,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\DonationController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\FundraisingController;
+use App\Http\Controllers\OrganizationController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Authcontroller;
@@ -38,6 +39,8 @@ Route::middleware(['auth:sanctum', OrganizationMiddleware::class])->group(functi
     Route::post('/fundraising', [FundraisingController::class, 'store']);
     Route::put('/fundraising/{id}', [FundraisingController::class, 'update']);
     Route::get('/org/fundraisings', [FundraisingController::class, 'organizationFundraisings']);
+
+    Route::get('/organization/dashboard', [OrganizationController::class, 'getDashboardStats']);
 });
 
 // Admin routes

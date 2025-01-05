@@ -6,6 +6,7 @@ use App\Models\Event;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class EventController extends Controller
 {
@@ -136,6 +137,7 @@ class EventController extends Controller
     {
         $event = Event::findOrFail($id);
 
+        // Authorization check
         if (Auth::user()->role !== 'admin' && Auth::user()->organization->id !== $event->organization_id) {
             return response()->json([
                 'status' => 'error',
@@ -151,6 +153,7 @@ class EventController extends Controller
             'max_tickets' => 'sometimes|integer|min:1',
             'price' => 'sometimes|numeric|min:0',
             'duration' => 'sometimes|numeric|min:0',
+            'status' => 'sometimes|in:active,cancelled,pending',
             'images' => 'sometimes|array',
             'images.*' => 'image|mimes:jpeg,png,jpg|max:2048',
             'remove_images' => 'sometimes|array',
@@ -159,11 +162,38 @@ class EventController extends Controller
 
         DB::beginTransaction();
         try {
+            // Check if status is being changed to 'active' by non-admin
+            if (isset($validated['status']) && 
+                $validated['status'] === 'active' && 
+                Auth::user()->role !== 'admin') {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Only administrators can activate events'
+                ], 403);
+            }
+
+            // If max_tickets is being reduced, check if it's still above sold tickets count
+            if (isset($validated['max_tickets'])) {
+                $soldTickets = $event->tickets()->count();
+                if ($validated['max_tickets'] < $soldTickets) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Cannot reduce max tickets below sold tickets count'
+                    ], 400);
+                }
+            }
+
+            // Update event
             $event->update($validated);
 
             // Remove images if specified
             if ($request->has('remove_images')) {
-                $event->images()->whereIn('id', $request->remove_images)->delete();
+                $imagesToDelete = $event->images()->whereIn('id', $request->remove_images)->get();
+                foreach ($imagesToDelete as $image) {
+                    // Delete from storage
+                    Storage::disk('public')->delete($image->image_path);
+                    $image->delete();
+                }
             }
 
             // Add new images
@@ -177,13 +207,21 @@ class EventController extends Controller
                 }
             }
 
-            DB::commit();
+            // If date is changed, notify ticket holders
+            if (isset($validated['date']) && $event->isDirty('date')) {
+                // TODO: Implement notification system
+                // $event->tickets()->with('user')->get()->each(function ($ticket) use ($event) {
+                //     Notification::send($ticket->user, new EventDateChanged($event));
+                // });
+            }
 
+            DB::commit();
             return response()->json([
                 'status' => 'success',
                 'message' => 'Event updated successfully',
-                'data' => $event->load('images')
+                'data' => $event->fresh(['images', 'organization'])
             ]);
+            
         } catch (\Exception $e) {
             DB::rollback();
             return response()->json([
