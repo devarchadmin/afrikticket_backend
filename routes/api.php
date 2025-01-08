@@ -7,7 +7,7 @@ use App\Http\Controllers\FundraisingController;
 use App\Http\Controllers\OrganizationController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Authcontroller;
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\TicketController;
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\OrganizationMiddleware;
@@ -45,6 +45,7 @@ Route::middleware(['auth:sanctum', OrganizationMiddleware::class])->group(functi
     //fundraising routes
     Route::post('/fundraising', [FundraisingController::class, 'store']);
     Route::put('/fundraising/{id}', [FundraisingController::class, 'update']);
+    Route::delete('/fundraising/{id}', [FundraisingController::class, 'delete']);
     Route::get('/org/fundraisings', [FundraisingController::class, 'organizationFundraisings']);
 
     Route::get('/organization/dashboard', [OrganizationController::class, 'getDashboardStats']);
@@ -69,6 +70,12 @@ Route::middleware(['auth:sanctum', AdminMiddleware::class])->group(function () {
 
     Route::delete('/admin/organizations/{id}', [AdminController::class, 'deleteOrganisation']);
 
+
+    //admin management routes 
+    Route::post('/admin/create', [AdminController::class, 'createAdmin']);
+    Route::put('/admin/{id}/role', [AdminController::class, 'updateAdminRole']);
+
+
 });
 
 Route::get('/fundraising', [FundraisingController::class, 'index']);
@@ -79,7 +86,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::post('/fundraising/{fundraisingId}/donate', [DonationController::class, 'store']);
     Route::get('/user/donations', [DonationController::class, 'myDonations']);
-
+     
     Route::get('/user/tickets', [TicketController::class,'myTicket']);
     Route::get('/user/events', [EventController::class, 'userEvents']);
 

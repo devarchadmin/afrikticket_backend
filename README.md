@@ -54,7 +54,7 @@ AfrikTicket is a comprehensive event ticketing and fundraising platform built wi
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/devarchadmin/afrikticket_backend.git
+git clone "repourl"
 cd afrikticket_back
 ```
 2. Install dependencies:

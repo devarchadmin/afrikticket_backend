@@ -19,7 +19,7 @@ class AuthController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users',
             'password' => 'required|string|min:8|confirmed',
-            'role' => 'required|in:user,organization,admin',
+            'role' => 'required|in:user,organization',
             'phone' => 'nullable|string',
             'profile_image' => 'nullable|string',
             // Organization fields
@@ -30,8 +30,8 @@ class AuthController extends Controller
             'org_icd_document' => 'required_if:role,organization|file|mimes:pdf,jpg,jpeg,png|max:2048',
             'org_commerce_register' => 'required_if:role,organization|file|mimes:pdf,jpg,jpeg,png|max:2048',
             // Admin fields
-            'admin_role' => 'required_if:role,admin|in:super_admin,moderator',
-            'admin_permissions' => 'nullable|array'
+            // 'admin_role' => 'required_if:role,admin|in:super_admin,moderator',
+            // 'admin_permissions' => 'nullable|array'
         ]);
 
         $user = User::create([
@@ -59,13 +59,14 @@ class AuthController extends Controller
                 'icd_document' => $icdPath,
                 'commerce_register' => $commercePath
             ]);
-        } elseif ($validated['role'] === 'admin') {
-            Admin::create([
-                'user_id' => $user->id,
-                'role' => $validated['admin_role'],
-                'permissions' => $validated['admin_permissions'] ?? null
-            ]);
-        }
+        } 
+        // elseif ($validated['role'] === 'admin') {
+        //     Admin::create([
+        //         'user_id' => $user->id,
+        //         'role' => $validated['admin_role'],
+        //         'permissions' => $validated['admin_permissions'] ?? null
+        //     ]);
+        // }
 
         return response()->json([
             'status' => 'success',

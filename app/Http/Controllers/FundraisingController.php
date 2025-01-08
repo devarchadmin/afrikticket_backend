@@ -176,7 +176,7 @@ public function update(Request $request, $id)
     }
 }
 
-public function destroy($id)
+public function delete($id)
 {
     $fundraising = Fundraising::findOrFail($id);
 
