@@ -11,43 +11,50 @@ use Illuminate\Support\Facades\Storage;
 class EventController extends Controller
 {
     private function calculateEndTime($startDate, $duration)
-{
-    preg_match('/(\d+)\s*(hour|day|week)s?/', $duration, $matches);
-    if (count($matches) >= 3) {
-        $value = (int) $matches[1];
-        $unit = $matches[2];
-        return \Carbon\Carbon::parse($startDate)->add(
-            $unit === 'hour' ? $value . ' hours' : 
-            ($unit === 'day' ? $value . ' days' : $value . ' weeks')
-        );
+    {
+        preg_match('/(\d+)\s*(hour|day|week)s?/', $duration, $matches);
+        if (count($matches) >= 3) {
+            $value = (int) $matches[1];
+            $unit = $matches[2];
+            return \Carbon\Carbon::parse($startDate)->add(
+                $unit === 'hour' ? $value . ' hours' :
+                ($unit === 'day' ? $value . ' days' : $value . ' weeks')
+            );
+        }
+        return \Carbon\Carbon::parse($startDate)->addHours(2); // Default 2 hours
     }
-    return \Carbon\Carbon::parse($startDate)->addHours(2); // Default 2 hours
-}
     public function index()
-{
-    $events = Event::with(['organization'])
-        ->where('status', 'active') // Only show active events
-        ->get()
-        ->map(function ($event) {
-            $ticketsSold = $event->tickets()->count();
-            $endTime = $this->calculateEndTime($event->date, $event->duration);
-            
-            return [
-                'id' => $event->id,
-                'title' => $event->title,
-                'description' => $event->description,
-                'start_date' => $event->date,
-                'end_date' => $endTime,
-                'duration' => $event->duration,
-                'location' => $event->location,
-                'remaining_tickets' => $event->max_tickets - $ticketsSold,
-                'time_remaining' => now()->diffForHumans($event->date, ['parts' => 2]),
-                'is_ongoing' => now()->between($event->date, $endTime),
-                'organization' => $event->organization
-            ];
-        });
-    return response()->json(['status' => 'success', 'data' => $events], 201);
-}
+    {
+        $events = Event::with(['organization'])
+            ->where('status', 'active') // Only show active events
+            ->get()
+            ->map(function ($event) {
+                $ticketsSold = $event->tickets()->count();
+                $endTime = $this->calculateEndTime($event->date, $event->duration);
+
+                return [
+                    'id' => $event->id,
+                    'title' => $event->title,
+                    'description' => $event->description,
+                    'start_date' => $event->date,
+                    'end_date' => $endTime,
+                    'duration' => $event->duration,
+                    'location' => $event->location,
+                    'price' => $event->price,
+                    'remaining_tickets' => $event->max_tickets - $ticketsSold,
+                    'time_remaining' => now()->isBefore($event->date) 
+                        ? now()->diffForHumans($event->date, [
+                            'parts' => 2,
+                            'syntax' => \Carbon\CarbonInterface::DIFF_ABSOLUTE
+                        ])
+                        : 'Terminé',
+                    'is_ongoing' => now()->between($event->date, $endTime),
+                    'image' => $event->images->first()?->image_path,
+                    'organization' => $event->organization
+                ];
+            });
+        return response()->json(['status' => 'success', 'data' => $events], 201);
+    }
 
     public function store(Request $request)
     {
@@ -72,7 +79,7 @@ class EventController extends Controller
 
         $validated['organization_id'] = Auth::user()->organization->id;
         $validated['status'] = 'pending'; // Add pending status
-        
+
         DB::beginTransaction();
         try {
             $event = Event::create($validated);
@@ -87,7 +94,7 @@ class EventController extends Controller
             }
 
             DB::commit();
-            
+
             return response()->json([
                 'status' => 'success',
                 'message' => 'Event created successfully',
@@ -106,10 +113,10 @@ class EventController extends Controller
     {
         $event = Event::findOrFail($id);
         $event->load(['organization', 'tickets', 'images']);
-        
+
         $endTime = $this->calculateEndTime($event->date, $event->duration);
         $ticketsSold = $event->tickets->count();
-    
+
         $eventData = [
             'event' => $event,
             'timing' => [
@@ -117,7 +124,12 @@ class EventController extends Controller
                 'end_date' => $endTime,
                 'duration' => $event->duration,
                 'is_ongoing' => now()->between($event->date, $endTime),
-                'time_remaining' => now()->diffForHumans($event->date, ['parts' => 2])
+                'time_remaining' => now()->isBefore($event->date) 
+                    ? now()->diffForHumans($event->date, [
+                        'parts' => 2,
+                        'syntax' => \Carbon\CarbonInterface::DIFF_ABSOLUTE
+                    ])
+                    : 'Terminé'
             ],
             'tickets' => [
                 'sold' => $ticketsSold,
@@ -129,7 +141,7 @@ class EventController extends Controller
                 'gallery' => $event->images->where('is_main', false)->values()
             ]
         ];
-    
+
         return response()->json(['status' => 'success', 'data' => $eventData], 200);
     }
 
@@ -163,9 +175,11 @@ class EventController extends Controller
         DB::beginTransaction();
         try {
             // Check if status is being changed to 'active' by non-admin
-            if (isset($validated['status']) && 
-                $validated['status'] === 'active' && 
-                Auth::user()->role !== 'admin') {
+            if (
+                isset($validated['status']) &&
+                $validated['status'] === 'active' &&
+                Auth::user()->role !== 'admin'
+            ) {
                 return response()->json([
                     'status' => 'error',
                     'message' => 'Only administrators can activate events'
@@ -221,7 +235,7 @@ class EventController extends Controller
                 'message' => 'Event updated successfully',
                 'data' => $event->fresh(['images', 'organization'])
             ]);
-            
+
         } catch (\Exception $e) {
             DB::rollback();
             return response()->json([
@@ -233,7 +247,7 @@ class EventController extends Controller
 
     public function delete($id)
     {
-        
+
         $event = Event::findOrFail($id);
 
         if (Auth::user()->role !== 'admin' && Auth::user()->organization->id !== $event->organization_id) {

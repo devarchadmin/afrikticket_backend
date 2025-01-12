@@ -12,15 +12,19 @@ use App\Http\Controllers\TicketController;
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\OrganizationMiddleware;
 
-Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/user', [AuthController::class, 'getUser']);
-    Route::post('/logout', [AuthController::class, 'logout']);
-});
+
 
 //testing route that return a message
-Route::get('/hello-testing', function() {
+Route::get('/hello-testing', function () {
     return response()->json([
-        'message' => 'Hello from AfrikTicket API!' ]);
+        'message' => 'Hello from AfrikTicket API!'
+    ]);
+});
+
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/user', [AuthController::class, 'getAuthUser']);
+    Route::post('/logout', [AuthController::class, 'logout']);
 });
 
 
@@ -35,12 +39,13 @@ Route::get('/events/{id}', [EventController::class, 'show']);
 
 // Organization routes
 Route::middleware(['auth:sanctum', OrganizationMiddleware::class])->group(function () {
+
     // Organization only routes here
     Route::post('/events', [EventController::class, 'store']);
     Route::put('/events/{id}', [EventController::class, 'update']);
     Route::delete('/events/{id}', [EventController::class, 'delete']);
     Route::get('/org/events', [EventController::class, 'organizationEvents']);
-    
+
     Route::post('/tickets/validate', [TicketController::class, 'validateTicket']);
     //fundraising routes
     Route::post('/fundraising', [FundraisingController::class, 'store']);
@@ -86,21 +91,21 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::post('/fundraising/{fundraisingId}/donate', [DonationController::class, 'store']);
     Route::get('/user/donations', [DonationController::class, 'myDonations']);
-     
-    Route::get('/user/tickets', [TicketController::class,'myTicket']);
+
+    Route::get('/user/tickets', [TicketController::class, 'myTicket']);
     Route::get('/user/events', [EventController::class, 'userEvents']);
 
+
+    // User routes 
+    Route::get('/user/{id}', [AuthController::class, 'getUser']);
+    Route::put('/user/{id}', [AuthController::class, 'updateUser']);
+    Route::put('/user/{id}/password', [AuthController::class, 'updateUserPassword']);
+
+
+    //update password and update profile   
+    Route::put('/user/{id}/password', [AuthController::class, 'updateUserPassword']);
+    Route::put('/user/updateProfile', [EventController::class, 'updateUser']);
+    Route::get('/user/profile', [AuthController::class, 'getAuthUser']);
+
+
 });
-
-// Admin routes
-// Route::middleware(['auth:sanctum', AdminMiddleware::class])->group(function () {
-//     // Admin only routes here
-//     Route::get('/admin/users', [AdminController::class, 'getAllUsers']);
-//     Route::get('/admin/organizations', [AdminController::class, 'getAllOrganizations']);
-//     Route::put('/admin/organizations/{id}/status', [AdminController::class, 'updateOrganizationStatus']);
-// });
-
-
-
-
-

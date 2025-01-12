@@ -82,7 +82,12 @@ class TicketController extends Controller
 {
     // Get all tickets with their events
     $tickets = Ticket::with(['event' => function($query) {
-        $query->select('id', 'title', 'date', 'price', 'organization_id');
+        $query->select('id', 'title', 'date', 'price', 'organization_id', )
+        ->with(['images' => function($query) {
+            $query->select('event_id', 'image_path')
+                ->where('is_main', true)
+                ->limit(1);
+            }]);
     }])
     ->where('user_id', Auth::id())
     ->get();
