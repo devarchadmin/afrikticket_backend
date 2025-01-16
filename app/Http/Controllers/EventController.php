@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Event;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -42,7 +43,7 @@ class EventController extends Controller
                     'location' => $event->location,
                     'price' => $event->price,
                     'remaining_tickets' => $event->max_tickets - $ticketsSold,
-                    'time_remaining' => now()->isBefore($event->date) 
+                    'time_remaining' => now()->isBefore($event->date)
                         ? now()->diffForHumans($event->date, [
                             'parts' => 2,
                             'syntax' => \Carbon\CarbonInterface::DIFF_ABSOLUTE
@@ -124,7 +125,7 @@ class EventController extends Controller
                 'end_date' => $endTime,
                 'duration' => $event->duration,
                 'is_ongoing' => now()->between($event->date, $endTime),
-                'time_remaining' => now()->isBefore($event->date) 
+                'time_remaining' => now()->isBefore($event->date)
                     ? now()->diffForHumans($event->date, [
                         'parts' => 2,
                         'syntax' => \Carbon\CarbonInterface::DIFF_ABSOLUTE
@@ -309,6 +310,8 @@ class EventController extends Controller
             ]
         ]);
     }
+
+
     public function userEvents()
     {
         $user = auth()->user();
@@ -319,29 +322,152 @@ class EventController extends Controller
         })
             ->with([
                 'organization',
-                'images',
+                'images' => function ($query) {
+                    $query->where('is_main', true);
+                },
                 'tickets' => function ($query) use ($user) {
                     $query->where('user_id', $user->id);
                 }
             ])
             ->get()
-            ->groupBy(function ($event) use ($now) {
-                if ($event->date < $now) {
-                    return 'past';
-                } elseif ($event->date->isToday()) {
-                    return 'present';
-                } else {
-                    return 'upcoming';
-                }
+            ->map(function ($event) {
+                return [
+                    'id' => $event->id,
+                    'title' => $event->title,
+                    'description' => $event->description,
+                    'date' => $event->date,
+                    'location' => $event->location,
+                    'price' => $event->price,
+                    'organization' => $event->organization,
+                    'main_image' => $event->images->first()?->image_path,
+                    'tickets' => [
+                        'count' => $event->tickets->count(),
+                        'total_cost' => $event->tickets->count() * $event->price,
+                        'status' => now()->gt($event->date) ? 'past' :
+                            (now()->isSameDay($event->date) ? 'today' : 'upcoming')
+                    ]
+                ];
+            })
+            ->groupBy(function ($event) {
+                return $event['tickets']['status'];
             });
+
+        $summary = [
+            'total_tickets' => $events->flatten(1)->sum('tickets.count'),
+            'total_spent' => $events->flatten(1)->sum('tickets.total_cost'),
+            'total_events' => $events->flatten(1)->count()
+        ];
 
         return response()->json([
             'status' => 'success',
             'data' => [
-                'past' => $events['past'] ?? [],
-                'present' => $events['present'] ?? [],
-                'upcoming' => $events['upcoming'] ?? []
+                'events' => [
+                    'upcoming' => $events['upcoming'] ?? [],
+                    'today' => $events['today'] ?? [],
+                    'past' => $events['past'] ?? []
+                ],
+                'summary' => $summary
             ]
         ]);
+    }
+
+    // public function getCalendarEvents(Request $request)
+    // {
+    //     try {
+    //         $events = Event::where('status', 'active')
+    //             ->get()
+    //             ->map(function ($event) {
+    //                 return [
+    //                     'title' => $event->title,
+    //                     'start' => Carbon::parse($event->date)->toIso8601String(),
+    //                     'end' => $this->calculateEndTime($event->date, $event->duration)->toIso8601String(),
+    //                 ];
+    //             });
+
+    //         return response()->json([
+    //             'status' => 'success',
+    //             'events' => $events
+    //         ]);
+
+    //     } catch (\Exception $e) {
+    //         return response()->json([
+    //             'status' => 'error',
+    //             'message' => 'Error fetching calendar events'
+    //         ], 500);
+    //     }
+    // }
+    
+    public function getCalendarEvents(Request $request)
+    {
+        try {
+            $user = auth()->user();
+            
+            if (!$user) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Unauthenticated'
+                ], 401);
+            }
+    
+            $events = Event::whereHas('tickets', function ($query) use ($user) {
+                $query->where('user_id', $user->id);
+            })
+            ->with([
+                'organization:id,name',
+                'images' => function ($query) {
+                    $query->where('is_main', true)->select('id', 'event_id', 'image_path');
+                },
+                'tickets' => function ($query) use ($user) {
+                    $query->where('user_id', $user->id)->select('id', 'event_id', 'price');
+                }
+            ])
+            ->select('id', 'title', 'description', 'date', 'duration', 'location', 'price', 'organization_id')
+            ->get();
+    
+            $formattedEvents = $events->map(function ($event) {
+                try {
+                    return [
+                        'id' => $event->id,
+                        'title' => $event->title,
+                        'start' => Carbon::parse($event->date)->toIso8601String(),
+                        'end' => $this->calculateEndTime($event->date, $event->duration)->toIso8601String(),
+                        'allDay' => false,
+                        'extendedProps' => [
+                            'location' => $event->location,
+                            'description' => $event->description,
+                            'ticketCount' => $event->tickets->count(),
+                            'totalCost' => $event->tickets->sum('price'),
+                            'organization' => $event->organization?->name ?? 'Unknown',
+                            'image' => $event->images->first()?->image_path,
+                            'status' => now()->gt($event->date) ? 'past' : 
+                                      (now()->isSameDay($event->date) ? 'today' : 'upcoming')
+                        ]
+                    ];
+                } catch (\Exception $e) {
+                    \Log::error('Error formatting event: ' . $e->getMessage(), [
+                        'event_id' => $event->id,
+                        'error' => $e->getMessage()
+                    ]);
+                    return null;
+                }
+            })->filter();
+    
+            return response()->json([
+                'status' => 'success',
+                'events' => $formattedEvents
+            ]);
+    
+        } catch (\Exception $e) {
+            \Log::error('Calendar events error: ' . $e->getMessage(), [
+                'user_id' => auth()->id(),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Error fetching calendar events: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

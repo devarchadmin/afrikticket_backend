@@ -25,6 +25,7 @@ Route::get('/hello-testing', function () {
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', [AuthController::class, 'getAuthUser']);
     Route::post('/logout', [AuthController::class, 'logout']);
+    Route::get('/events/calendar', [EventController::class, 'getCalendarEvents']);
 });
 
 
@@ -86,6 +87,8 @@ Route::middleware(['auth:sanctum', AdminMiddleware::class])->group(function () {
 Route::get('/fundraising', [FundraisingController::class, 'index']);
 Route::get('/fundraising/{id}', [FundraisingController::class, 'show']);
 
+
+
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/events/{eventId}/tickets', [TicketController::class, 'store']);
 
@@ -94,7 +97,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::get('/user/tickets', [TicketController::class, 'myTicket']);
     Route::get('/user/events', [EventController::class, 'userEvents']);
-
+    
+    Route::get('/user/fundraisings', [FundraisingController::class, 'userFundraisings']);
 
     // User routes 
     Route::get('/user/{id}', [AuthController::class, 'getUser']);

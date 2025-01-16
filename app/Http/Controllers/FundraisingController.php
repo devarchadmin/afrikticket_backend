@@ -239,5 +239,65 @@ public function organizationFundraisings(Request $request)
         ]
     ]);
 }
+
+public function userFundraisings()
+{
+    $user = auth()->user();
+    
+    $fundraisings = Fundraising::whereHas('donations', function ($query) use ($user) {
+        $query->where('user_id', $user->id);
+    })
+    ->with([
+        'organization',
+        'images' => function($query) {
+            $query->where('is_main', true);
+        },
+        'donations' => function ($query) use ($user) {
+            $query->where('user_id', $user->id);
+        }
+    ])
+    ->get()
+    ->map(function ($fundraising) {
+        return [
+            'id' => $fundraising->id,
+            'title' => $fundraising->title,
+            'description' => $fundraising->description,
+            'goal' => $fundraising->goal,
+            'current' => $fundraising->current,
+            'organization' => $fundraising->organization,
+            'main_image' => $fundraising->images->first()?->image_path,
+            'progress_percentage' => $fundraising->goal > 0 
+                ? round(($fundraising->current / $fundraising->goal) * 100, 2)
+                : 0,
+            'donations' => [
+                'count' => $fundraising->donations->count(),
+                'total_amount' => $fundraising->donations->sum('amount'),
+                'status' => $fundraising->current >= $fundraising->goal ? 'completed' : 
+                           ($fundraising->status === 'active' ? 'active' : 'cancelled')
+            ]
+        ];
+    })
+    ->groupBy(function ($fundraising) {
+        return $fundraising['donations']['status'];
+    });
+
+    $summary = [
+        'total_donations' => $fundraisings->flatten(1)->sum('donations.count'),
+        'total_contributed' => $fundraisings->flatten(1)->sum('donations.total_amount'),
+        'total_fundraisings' => $fundraisings->flatten(1)->count()
+    ];
+
+    return response()->json([
+        'status' => 'success',
+        'data' => [
+            'fundraisings' => [
+                'active' => $fundraisings['active'] ?? [],
+                'completed' => $fundraisings['completed'] ?? [],
+                'cancelled' => $fundraisings['cancelled'] ?? []
+            ],
+            'summary' => $summary
+        ]
+    ]);
+}
 }
 
