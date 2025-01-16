@@ -12,13 +12,21 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
+use Storage;
 
 class AdminController extends Controller
 {
-    public function getAllUsers()
+    public function getAllUsers(Request $request)
     {
-        $users = User::with(['organization', 'admin'])->get();
-        return response()->json(['status' => 'success', 'data' => $users]);
+        $perPage = $request->input('per_page', 10); // Default 10 items per page
+        $users = User::with(['organization', 'admin'])
+            ->orderBy('created_at', 'desc')
+            ->paginate($perPage);
+            
+        return response()->json([
+            'status' => 'success',
+            'data' => $users
+        ]);
     }
 
     public function createAdmin(Request $request)
@@ -97,7 +105,7 @@ class AdminController extends Controller
             'role' => $validated['admin_role'],
             'permissions' => $validated['permissions'] ?? []
         ]);
-      
+
         return response()->json([
             'status' => 'success',
             'message' => 'Administrator role updated successfully',
@@ -105,12 +113,14 @@ class AdminController extends Controller
         ]);
     }
 
-    public function getAllOrganizations()
+    public function getAllOrganizations(Request $request)
     {
+        $perPage = $request->input('per_page', 10);
         $organizations = Organization::with(['user'])
             ->withCount(['events', 'fundraisings'])
-            ->get()
-            ->map(function ($org) {
+            ->orderBy('created_at', 'desc')
+            ->paginate($perPage)
+            ->through(function ($org) {
                 return [
                     'organization' => $org,
                     'stats' => [
@@ -121,7 +131,10 @@ class AdminController extends Controller
                 ];
             });
 
-        return response()->json(['status' => 'success', 'data' => $organizations], 200);
+        return response()->json([
+            'status' => 'success',
+            'data' => $organizations
+        ]);
     }
 
     public function deleteOrganisation($id)
@@ -169,11 +182,24 @@ class AdminController extends Controller
         }
     }
 
-    public function getPendingContent()
+    public function getPendingContent(Request $request)
     {
-        $pendingOrgs = Organization::where('status', 'pending')->with('user')->get();
-        $pendingEvents = Event::where('status', 'pending')->with('organization')->get();
-        $pendingFundraisings = Fundraising::where('status', 'pending')->with('organization')->get();
+        $perPage = $request->input('per_page', 10);
+        
+        $pendingOrgs = Organization::where('status', 'pending')
+            ->with('user')
+            ->orderBy('created_at', 'desc')
+            ->paginate($perPage);
+            
+        $pendingEvents = Event::where('status', 'pending')
+            ->with('organization')
+            ->orderBy('created_at', 'desc')
+            ->paginate($perPage);
+            
+        $pendingFundraisings = Fundraising::where('status', 'pending')
+            ->with('organization')
+            ->orderBy('created_at', 'desc')
+            ->paginate($perPage);
 
         return response()->json([
             'status' => 'success',
@@ -185,11 +211,13 @@ class AdminController extends Controller
         ], 200);
     }
 
-    public function getPendingOrganizations()
+    public function getPendingOrganizations(Request $request)
     {
+        $perPage = $request->input('per_page', 10);
         $pendingOrgs = Organization::where('status', 'pending')
             ->with('user')
-            ->get();
+            ->orderBy('created_at', 'desc')
+            ->paginate($perPage);
 
         return response()->json([
             'status' => 'success',
@@ -197,11 +225,13 @@ class AdminController extends Controller
         ], 200);
     }
 
-    public function getPendingEvents()
+    public function getPendingEvents(Request $request) 
     {
+        $perPage = $request->input('per_page', 10);
         $pendingEvents = Event::where('status', 'pending')
             ->with('organization')
-            ->get();
+            ->orderBy('created_at', 'desc')
+            ->paginate($perPage);
 
         return response()->json([
             'status' => 'success',
@@ -210,11 +240,13 @@ class AdminController extends Controller
     }
 
 
-    public function getPendingFundraisings()
+    public function getPendingFundraisings(Request $request)
     {
+        $perPage = $request->input('per_page', 10);
         $pendingFundraisings = Fundraising::where('status', 'pending')
             ->with('organization')
-            ->get();
+            ->orderBy('created_at', 'desc')
+            ->paginate($perPage);
 
         return response()->json([
             'status' => 'success',
@@ -283,4 +315,5 @@ class AdminController extends Controller
 
         return response()->json(['status' => 'success', 'data' => $stats]);
     }
+
 }
