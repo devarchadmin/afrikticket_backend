@@ -199,6 +199,7 @@ public function organizationFundraisings(Request $request)
 {
     $fundraisings = Fundraising::withCount('donations')
         ->withSum('donations', 'amount')
+        ->with('images')
         ->where('organization_id', $request->user()->organization->id)
         ->get()
         ->map(function ($fundraising) {
@@ -208,6 +209,13 @@ public function organizationFundraisings(Request $request)
                 'description' => $fundraising->description,
                 'goal' => $fundraising->goal,
                 'status' => $fundraising->status,
+                'images' => $fundraising->images->map(function ($image) {
+                    return [
+                        'id' => $image->id,
+                        'image_path' => $image->image_path,
+                        'is_main' => $image->is_main
+                    ];
+                }),
                 'stats' => [
                     'total_donors' => $fundraising->donations_count,
                     'total_raised' => $fundraising->donations_sum_amount ?? 0,

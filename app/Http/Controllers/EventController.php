@@ -371,31 +371,7 @@ class EventController extends Controller
         ]);
     }
 
-    // public function getCalendarEvents(Request $request)
-    // {
-    //     try {
-    //         $events = Event::where('status', 'active')
-    //             ->get()
-    //             ->map(function ($event) {
-    //                 return [
-    //                     'title' => $event->title,
-    //                     'start' => Carbon::parse($event->date)->toIso8601String(),
-    //                     'end' => $this->calculateEndTime($event->date, $event->duration)->toIso8601String(),
-    //                 ];
-    //             });
-
-    //         return response()->json([
-    //             'status' => 'success',
-    //             'events' => $events
-    //         ]);
-
-    //     } catch (\Exception $e) {
-    //         return response()->json([
-    //             'status' => 'error',
-    //             'message' => 'Error fetching calendar events'
-    //         ], 500);
-    //     }
-    // }
+   
     
     public function getCalendarEvents(Request $request)
     {
