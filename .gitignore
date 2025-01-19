@@ -12,6 +12,7 @@
 .phpactor.json
 .phpunit.result.cache
 apidocumentation.txt
+admin-api-documentation.md
 Homestead.json
 Homestead.yaml
 auth.json
