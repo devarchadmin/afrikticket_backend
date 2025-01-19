@@ -54,7 +54,11 @@ Route::middleware(['auth:sanctum', OrganizationMiddleware::class])->group(functi
     Route::delete('/fundraising/{id}', [FundraisingController::class, 'delete']);
     Route::get('/org/fundraisings', [FundraisingController::class, 'organizationFundraisings']);
 
+    //organization dashboard
     Route::get('/organization/dashboard', [OrganizationController::class, 'getDashboardStats']);
+
+    //update organization profile
+    Route::put('/organization/update', [OrganizationController::class, 'updateOrganization']);
 });
 
 // Admin routes

@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
+use Storage;
 
 class OrganizationController extends Controller
 {
@@ -177,4 +178,62 @@ class OrganizationController extends Controller
             'donations' => $donationsQuery->get()
         ];
     }
+    public function updateOrganization(Request $request)
+{
+    try {
+        $organization = auth()->user()->organization;
+
+        $validated = $request->validate([
+            'name' => 'sometimes|string|max:255',
+            'email' => 'sometimes|email|unique:organizations,email,' . $organization->id,
+            'phone' => 'sometimes|string|max:20',
+            'description' => 'sometimes|string',
+            'icd_document' => 'sometimes|file|mimes:pdf,jpg,jpeg,png|max:2048',
+            'commerce_register' => 'sometimes|file|mimes:pdf,jpg,jpeg,png|max:2048'
+        ]);
+
+        DB::beginTransaction();
+
+        // Handle file uploads if present
+        if ($request->hasFile('icd_document')) {
+            // Delete old file if exists
+            if ($organization->icd_document) {
+                Storage::disk('public')->delete($organization->icd_document);
+            }
+            $validated['icd_document'] = $request->file('icd_document')
+                ->store('organizations/documents', 'public');
+        }
+
+        if ($request->hasFile('commerce_register')) {
+            // Delete old file if exists
+            if ($organization->commerce_register) {
+                Storage::disk('public')->delete($organization->commerce_register);
+            }
+            $validated['commerce_register'] = $request->file('commerce_register')
+                ->store('organizations/documents', 'public');
+        }
+
+        $organization->update($validated);
+
+        // If documents were updated, 
+        if ($request->hasFile('icd_document') || $request->hasFile('commerce_register')) {
+            $organization->update(['status' => 'pending']);
+        }
+
+        DB::commit();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Organization updated successfully',
+            'data' => $organization->showSensitiveData()
+        ]);
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Failed to update organization: ' . $e->getMessage()
+        ], 500);
+    }
+}
 }
