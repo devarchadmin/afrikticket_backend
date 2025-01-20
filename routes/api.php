@@ -43,15 +43,15 @@ Route::middleware(['auth:sanctum', OrganizationMiddleware::class])->group(functi
 
     // Organization only routes here
     Route::post('/events', [EventController::class, 'store']);
-    Route::put('/events/{id}', [EventController::class, 'update']);
-    Route::delete('/events/{id}', [EventController::class, 'delete']);
+    Route::put('', [EventController::class, 'update']); // Changed path
+    Route::delete('/org/events/{id}', [EventController::class, 'delete']); // Changed path
     Route::get('/org/events', [EventController::class, 'organizationEvents']);
 
     Route::post('/tickets/validate', [TicketController::class, 'validateTicket']);
     //fundraising routes
     Route::post('/fundraising', [FundraisingController::class, 'store']);
-    Route::put('/fundraising/{id}', [FundraisingController::class, 'update']);
-    Route::delete('/fundraising/{id}', [FundraisingController::class, 'delete']);
+    Route::put('/org/fundraising/{id}', [FundraisingController::class, 'update']); // Changed path
+    Route::delete('/org/fundraising/{id}', [FundraisingController::class, 'delete']); // Changed path
     Route::get('/org/fundraisings', [FundraisingController::class, 'organizationFundraisings']);
 
     //organization dashboard
@@ -84,8 +84,10 @@ Route::middleware(['auth:sanctum', AdminMiddleware::class])->group(function () {
     //admin management routes 
     Route::post('/admin/create', [AdminController::class, 'createAdmin']);
     Route::put('/admin/{id}/role', [AdminController::class, 'updateAdminRole']);
-
-
+    Route::put('/admin/events/{id}', [EventController::class, 'update']);
+    Route::delete('/admin/events/{id}', [EventController::class, 'delete']);
+    Route::put('/admin/fundraising/{id}', [FundraisingController::class, 'update']);
+    Route::delete('/admin/fundraising/{id}', [FundraisingController::class, 'delete']);
 });
 
 Route::get('/fundraising', [FundraisingController::class, 'index']);

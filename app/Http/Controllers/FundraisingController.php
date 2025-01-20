@@ -123,7 +123,9 @@ public function update(Request $request, $id)
 {
     $fundraising = Fundraising::findOrFail($id);
 
-    if ($request->user()->organization->id !== $fundraising->organization_id) {
+    // Allow both admin and organization owner
+    if (Auth::user()->role !== 'admin' && 
+        Auth::user()->organization?->id !== $fundraising->organization_id) {
         return response()->json([
             'status' => 'error',
             'message' => 'Unauthorized'
@@ -180,8 +182,9 @@ public function delete($id)
 {
     $fundraising = Fundraising::findOrFail($id);
 
+    // Allow both admin and organization owner
     if (Auth::user()->role !== 'admin' && 
-        Auth::user()->organization->id !== $fundraising->organization_id) {
+        Auth::user()->organization?->id !== $fundraising->organization_id) {
         return response()->json([
             'status' => 'error',
             'message' => 'Unauthorized'

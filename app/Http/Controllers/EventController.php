@@ -150,8 +150,9 @@ class EventController extends Controller
     {
         $event = Event::findOrFail($id);
 
-        // Authorization check
-        if (Auth::user()->role !== 'admin' && Auth::user()->organization->id !== $event->organization_id) {
+        // Allow both admin and organization owner
+        if (Auth::user()->role !== 'admin' && 
+            Auth::user()->organization?->id !== $event->organization_id) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Unauthorized'
@@ -248,10 +249,11 @@ class EventController extends Controller
 
     public function delete($id)
     {
-
         $event = Event::findOrFail($id);
 
-        if (Auth::user()->role !== 'admin' && Auth::user()->organization->id !== $event->organization_id) {
+        // Allow both admin and organization owner
+        if (Auth::user()->role !== 'admin' && 
+            Auth::user()->organization?->id !== $event->organization_id) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Unauthorized'
