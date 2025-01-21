@@ -38,14 +38,16 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::get('/events', [EventController::class, 'index']);
 Route::get('/events/{id}', [EventController::class, 'show']);
 
+
 // Organization routes
 Route::middleware(['auth:sanctum', OrganizationMiddleware::class])->group(function () {
 
     // Organization only routes here
     Route::post('/events', [EventController::class, 'store']);
-    Route::put('', [EventController::class, 'update']); // Changed path
     Route::delete('/org/events/{id}', [EventController::class, 'delete']); // Changed path
     Route::get('/org/events', [EventController::class, 'organizationEvents']);
+Route::put('/org/events/{id}', [EventController::class, 'update']); // Changed path
+
 
     Route::post('/tickets/validate', [TicketController::class, 'validateTicket']);
     //fundraising routes
