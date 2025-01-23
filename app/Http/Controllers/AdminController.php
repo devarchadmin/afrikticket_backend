@@ -163,7 +163,7 @@ class AdminController extends Controller
         try {
             $organization->update([
                 'status' => $validated['status'],
-                'rejection_reason' => $validated['status'] === 'rejected' ? $validated['reason'] : null
+                'rejection_reason' => $validated['status'] === 'rejected' ? $validated['reason'] : null  
             ]);
 
             // If approved, activate the user account

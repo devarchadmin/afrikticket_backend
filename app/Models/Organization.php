@@ -23,14 +23,14 @@ class Organization extends Model
     // Hide sensitive fields by default
     protected $hidden = [
         'icd_document',
-        'status',
+        // 'status',
         'commerce_register'
     ];
 
     // Create a visible version with documents for organization owners
     protected $organizationOwnerVisible = [
         'id', 'name', 'email', 'phone', 'description', 
-        'status', 'icd_document', 'commerce_register', 
+        'icd_document', 'commerce_register', 
         'user_id', 'created_at', 'updated_at'
     ];
 
