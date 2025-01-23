@@ -17,6 +17,7 @@ class Organization extends Model
         'status',
         'icd_document',
         'commerce_register',
+        'rejection_reason',
         'user_id'
     ];
 
