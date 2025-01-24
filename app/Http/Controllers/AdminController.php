@@ -257,14 +257,14 @@ class AdminController extends Controller
     public function reviewEvent(Request $request, $id)
     {
         $validated = $request->validate(rules: [
-            'status' => 'required|in:active,rejected',
-            'reason' => 'required_if:status,rejected|string'
+            'status' => 'required|in:active,cancelled',
+            'reason' => 'required_if:status,cancelled|string'
         ]);
 
         $event = Event::findOrFail($id);
         $event->update([
             'status' => $validated['status'],
-            'rejection_reason' => $validated['status'] === 'rejected' ? $validated['reason'] : null
+            'rejection_reason' => $validated['status'] === 'cancelled' ? $validated['reason'] : null
         ]);
 
         return response()->json([
@@ -276,14 +276,14 @@ class AdminController extends Controller
     public function reviewFundraising(Request $request, $id)
     {
         $validated = $request->validate([
-            'status' => 'required|in:active,rejected',
-            'reason' => 'required_if:status,rejected|string'
+            'status' => 'required|in:active,cancelled',
+            'reason' => 'required_if:status,cancelled|string'
         ]);
 
         $fundraising = Fundraising::findOrFail($id);
         $fundraising->update([
             'status' => $validated['status'],
-            'rejection_reason' => $validated['status'] === 'rejected' ? $validated['reason'] : null
+            'rejection_reason' => $validated['status'] === 'cancelled' ? $validated['reason'] : null
         ]);
 
         return response()->json([
