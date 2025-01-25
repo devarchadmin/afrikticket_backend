@@ -48,6 +48,7 @@ class AuthController extends Controller
             'role' => $validated['role'],
             'phone' => $validated['phone'] ?? null,
             'profile_image' => $profile_image_path,
+            'status' => $validated['role'] === 'organization' ? 'pending' : 'active'
         ]);
 
         if ($validated['role'] === 'organization') {
@@ -66,14 +67,12 @@ class AuthController extends Controller
                 'icd_document' => $icdPath,
                 'commerce_register' => $commercePath
             ]);
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Registration successful. Please wait for admin approval.'
+            ], 201);
         }
-        // elseif ($validated['role'] === 'admin') {
-        //     Admin::create([
-        //         'user_id' => $user->id,
-        //         'role' => $validated['admin_role'],
-        //         'permissions' => $validated['admin_permissions'] ?? null
-        //     ]);
-        // }
+
 
         return response()->json([
             'status' => 'success',
