@@ -18,7 +18,7 @@ return new class extends Migration
             $table->decimal('goal', 10, 2);
             $table->decimal('current', 10, 2)->default(0);
             $table->foreignId('organization_id')->constrained()->onDelete('cascade');
-            $table->enum('status', ['pending','active','completed', 'cancelled'])->default('pending');
+            $table->enum('status', ['pending','active','completed','rejected', 'cancelled'])->default('pending');
             $table->text('rejection_reason')->nullable();
             $table->timestamps();
         });
