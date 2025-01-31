@@ -22,6 +22,9 @@ Route::get('/hello-testing', function () {
 });
 
 
+Route::get('/fundraising/trending', [FundraisingController::class, 'getTrending']);
+
+
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', [AuthController::class, 'getAuthUser']);
     Route::post('/logout', [AuthController::class, 'logout']);

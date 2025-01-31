@@ -47,6 +47,46 @@ class FundraisingController extends Controller
         ]);
     }
 
+    public function getTrending()
+    {
+        $trending = Fundraising::with(['organization', 'images' => function($query) {
+                $query->where('is_main', true);
+            }])
+            ->where('status', 'active')
+            ->where('current', '<', DB::raw('goal')) // Not yet reached goal
+            ->withCount('donations')
+            ->withSum('donations', 'amount')
+            ->orderBy(DB::raw('(current / goal)'), 'desc') // Highest progress first
+            ->orderBy('created_at', 'asc') // Oldest first if same progress
+            ->first();
+    
+        if (!$trending) {
+            return response()->json([
+                'status' => 'success',
+                'data' => null
+            ]);
+        }
+    
+        return response()->json([
+            'status' => 'success',
+            'data' => [
+                'id' => $trending->id,
+                'title' => $trending->title,
+                'description' => $trending->description,
+                'goal' => $trending->goal,
+                'current' => $trending->current,
+                'organization' => $trending->organization,
+                'main_image' => $trending->images->first()?->image_path,
+                'stats' => [
+                    'total_donors' => $trending->donations_count,
+                    'total_raised' => $trending->donations_sum_amount ?? 0,
+                    'progress_percentage' => round(($trending->current / $trending->goal) * 100, 2),
+                    'remaining_amount' => max(0, $trending->goal - $trending->current)
+                ]
+            ]
+        ]);
+    }
+
 public function store(Request $request)
 {
     $validated = $request->validate([
