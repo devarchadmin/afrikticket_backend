@@ -24,11 +24,16 @@ class EventController extends Controller
         }
         return \Carbon\Carbon::parse($startDate)->addHours(2); // Default 2 hours
     }
-    public function index()
+    public function index(Request $request)
     {
-        $events = Event::with(['organization'])
-            ->where('status', 'active') // Only show active events
-            ->get()
+        $query = Event::with(['organization'])
+            ->where('status', 'active');
+
+        if ($request->has('category')) {
+            $query->where('category', $request->category);
+        }
+
+        $events = $query->get()
             ->map(function ($event) {
                 $ticketsSold = $event->tickets()->count();
                 $endTime = $this->calculateEndTime($event->date, $event->duration);
@@ -42,6 +47,7 @@ class EventController extends Controller
                     'duration' => $event->duration,
                     'location' => $event->location,
                     'price' => $event->price,
+                    'category' => $event->category,
                     'remaining_tickets' => $event->max_tickets - $ticketsSold,
                     'time_remaining' => now()->isBefore($event->date)
                         ? now()->diffForHumans($event->date, [
@@ -54,6 +60,7 @@ class EventController extends Controller
                     'organization' => $event->organization
                 ];
             });
+
         return response()->json(['status' => 'success', 'data' => $events], 201);
     }
 
@@ -74,6 +81,7 @@ class EventController extends Controller
             'max_tickets' => 'required|integer|min:1',
             'price' => 'required|numeric|min:0',
             'duration' => 'required|numeric|min:0',
+            'category' => 'required|in:festival,concert,sport,art,education,technology,business,other',
             'images' => 'required|array|min:1',
             'images.*' => 'image|mimes:jpeg,png,jpg|max:2048'
         ]);
@@ -167,6 +175,7 @@ class EventController extends Controller
             'max_tickets' => 'sometimes|integer|min:1',
             'price' => 'sometimes|numeric|min:0',
             'duration' => 'sometimes|numeric|min:0',
+            'category' => 'sometimes|in:festival,concert,sport,art,education,technology,business,other',
             'status' => 'sometimes|in:active,cancelled,pending',
             'images' => 'sometimes|array',
             'images.*' => 'image|mimes:jpeg,png,jpg|max:2048',
@@ -282,7 +291,8 @@ class EventController extends Controller
             ->map(function ($event) {
                 return [
                     'event' => $event,
-                    'status' => $event->status, // Add status to response
+                    'status' => $event->status,
+                    'category' => $event->category,
                     'stats' => [
                         'total_tickets' => $event->tickets->count(),
                         'tickets_remaining' => $event->max_tickets - $event->tickets->count(),

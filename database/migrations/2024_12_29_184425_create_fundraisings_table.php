@@ -19,6 +19,7 @@ return new class extends Migration
             $table->decimal('current', 10, 2)->default(0);
             $table->foreignId('organization_id')->constrained()->onDelete('cascade');
             $table->enum('status', ['pending','active','completed','rejected', 'cancelled'])->default('pending');
+            $table->enum('category', ['education', 'health', 'environment', 'humanitarian', 'technology', 'community', 'emergency', 'other'])->default('other');
             $table->text('rejection_reason')->nullable();
             $table->timestamps();
         });

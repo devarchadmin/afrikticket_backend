@@ -9,11 +9,16 @@ use Illuminate\Support\Facades\DB;
 
 class FundraisingController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $fundraisings = Fundraising::with(['organization', 'donations', 'images'])
-            ->where('status', 'active')
-            ->get()
+        $query = Fundraising::with(['organization', 'donations', 'images'])
+            ->where('status', 'active');
+
+        if ($request->has('category')) {
+            $query->where('category', $request->category);
+        }
+
+        $fundraisings = $query->get()
             ->map(function ($fundraising) {
                 return [
                     'fundraising' => $fundraising,
@@ -75,6 +80,7 @@ class FundraisingController extends Controller
                 'description' => $trending->description,
                 'goal' => $trending->goal,
                 'current' => $trending->current,
+                'category' => $trending->category,
                 'organization' => $trending->organization,
                 'main_image' => $trending->images->first()?->image_path,
                 'stats' => [
@@ -93,6 +99,7 @@ public function store(Request $request)
         'title' => 'required|string|max:255',
         'description' => 'required|string',
         'goal' => 'required|numeric|min:0',
+        'category' => 'required|in:education,health,environment,humanitarian,technology,community,emergency,other',
         'images' => 'required|array|min:1',
         'images.*' => 'image|mimes:jpeg,png,jpg|max:2048'
     ]);
@@ -177,6 +184,7 @@ public function update(Request $request, $id)
         'description' => 'sometimes|string',
         'goal' => 'sometimes|numeric|min:0',
         'status' => 'sometimes|in:active,completed,cancelled',
+        'category' => 'sometimes|in:education,health,environment,humanitarian,technology,community,emergency,other',
         'images' => 'sometimes|array',
         'images.*' => 'image|mimes:jpeg,png,jpg|max:2048',
         'remove_images' => 'sometimes|array',
@@ -252,6 +260,7 @@ public function organizationFundraisings(Request $request)
                 'description' => $fundraising->description,
                 'goal' => $fundraising->goal,
                 'status' => $fundraising->status,
+                'category' => $fundraising->category,
                 'images' => $fundraising->images->map(function ($image) {
                     return [
                         'id' => $image->id,
@@ -315,6 +324,7 @@ public function userFundraisings()
             'description' => $fundraising->description,
             'goal' => $fundraising->goal,
             'current' => $fundraising->current,
+            'category' => $fundraising->category,
             'organization' => $fundraising->organization,
             'main_image' => $fundraising->images->first()?->image_path,
             'progress_percentage' => $fundraising->goal > 0 

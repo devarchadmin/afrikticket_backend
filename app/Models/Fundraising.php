@@ -15,7 +15,8 @@ class Fundraising extends Model
         'goal',
         'current',
         'organization_id',
-        'status'
+        'status',
+        'category'
     ];
 
     protected $casts = [

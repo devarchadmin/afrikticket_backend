@@ -22,7 +22,9 @@ return new class extends Migration
             $table->foreignId('organization_id')->constrained()->onDelete('cascade');
             $table->decimal('duration')->default(2);
             $table->enum('status', ['pending','active','rejected', 'cancelled'])->default('pending');
+            $table->enum('category', ['festival', 'concert', 'sport', 'art', 'education', 'technology', 'business', 'other'])->default('other');
             $table->text('rejection_reason')->nullable();
+            
             $table->timestamps();
         });
     }

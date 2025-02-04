@@ -19,7 +19,8 @@ class Event extends Model
         'price',
         'organization_id',
         'status',
-        'duration'
+        'duration',
+        'category'
     ];
 
     protected $casts = [
