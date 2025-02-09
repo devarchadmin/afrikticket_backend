@@ -49,7 +49,7 @@ Route::middleware(['auth:sanctum', OrganizationMiddleware::class])->group(functi
     Route::post('/events', [EventController::class, 'store']);
     Route::delete('/org/events/{id}', [EventController::class, 'delete']); // Changed path
     Route::get('/org/events', [EventController::class, 'organizationEvents']);
-Route::put('/org/events/{id}', [EventController::class, 'update']); // Changed path
+    Route::put('/org/events/{id}', [EventController::class, 'update']); // Changed path
 
 
     Route::post('/tickets/validate', [TicketController::class, 'validateTicket']);
@@ -68,31 +68,39 @@ Route::put('/org/events/{id}', [EventController::class, 'update']); // Changed p
 
 // Admin routes
 Route::middleware(['auth:sanctum', AdminMiddleware::class])->group(function () {
+    // Dashboard and stats
     Route::get('/admin/dashboard/stats', [AdminController::class, 'getDashboardStats']);
+    
+    // User management
     Route::get('/admin/users', [AdminController::class, 'getAllUsers']);
+    Route::get('/admin/users/{id}/activity', [AdminController::class, 'getUserActivity']);
+    
+    // Organization management
     Route::get('/admin/organizations', [AdminController::class, 'getAllOrganizations']);
+    Route::put('/admin/organizations/{id}/status', [AdminController::class, 'updateOrganizationStatus']);
+    Route::delete('/admin/organizations/{id}', [AdminController::class, 'deleteOrganisation']);
 
-    // Pending content
+    // Pending content management
     Route::get('/admin/pending', [AdminController::class, 'getPendingContent']);
     Route::get('/admin/pending/events', [AdminController::class, 'getPendingEvents']);
     Route::get('/admin/pending/fundraisings', [AdminController::class, 'getPendingFundraisings']);
     Route::get('/admin/pending/orgs', [AdminController::class, 'getPendingOrganizations']);
 
-    // Review content
+    // Event management
+    Route::get('/admin/events/{id}/users', [AdminController::class, 'getEventWithUsers']);
     Route::put('/admin/events/{id}/review', [AdminController::class, 'reviewEvent']);
-    Route::put('/admin/fundraisings/{id}/review', [AdminController::class, 'reviewFundraising']);
-    Route::put('/admin/organizations/{id}/status', [AdminController::class, 'updateOrganizationStatus']);
-
-    Route::delete('/admin/organizations/{id}', [AdminController::class, 'deleteOrganisation']);
-
-
-    //admin management routes 
-    Route::post('/admin/create', [AdminController::class, 'createAdmin']);
-    Route::put('/admin/{id}/role', [AdminController::class, 'updateAdminRole']);
     Route::put('/admin/events/{id}', [EventController::class, 'update']);
     Route::delete('/admin/events/{id}', [EventController::class, 'delete']);
+
+    // Fundraising management
+    Route::get('/admin/fundraisings/{id}/users', [AdminController::class, 'getFundraisingWithUsers']);
+    Route::put('/admin/fundraisings/{id}/review', [AdminController::class, 'reviewFundraising']);
     Route::put('/admin/fundraising/{id}', [FundraisingController::class, 'update']);
     Route::delete('/admin/fundraising/{id}', [FundraisingController::class, 'delete']);
+
+    // Admin management
+    Route::post('/admin/create', [AdminController::class, 'createAdmin']);
+    Route::put('/admin/{id}/role', [AdminController::class, 'updateAdminRole']);
 });
 
 Route::get('/fundraising', [FundraisingController::class, 'index']);
