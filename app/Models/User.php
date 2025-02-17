@@ -50,4 +50,14 @@ class User extends Authenticatable
     {
         return $this->hasOne(Admin::class);
     }
+
+    public function tickets()
+    {
+        return $this->hasMany(Ticket::class);
+    }
+
+    public function donations()
+    {
+        return $this->hasMany(Donation::class);
+    }
 }
